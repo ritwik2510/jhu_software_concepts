@@ -10,9 +10,18 @@
 
 <nav>
     <ul>
-    <li><a href="{{ url_for('pages.home') }}">Home</a></li>
-    <li><a href="{{ url_for('pages.contact') }}">Contact</a></li>
-    <li><a href="{{ url_for('pages.projects') }}">Projects</a></li>
+    <li><a href="{{ url_for('pages.home') }}"
+        class="{% if active == 'home' %}active{% endif %}">
+        Home
+    </a></li>
+    <li><a href="{{ url_for('pages.contact') }}"
+        class="{% if active == 'contact' %}active{% endif %}">
+        Contact
+    </a></li>
+    <li><a href="{{ url_for('pages.projects') }}"
+        class="{% if active == 'home' %}active{% endif %}">
+        Projects
+    </a></li>
     <ul>
 </nav>
 
