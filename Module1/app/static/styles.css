@@ -27,3 +27,24 @@ nav a:hover {
 .content {
     padding: 40px;
 }
+
+.active {
+    background-color: aqua;
+    padding: 8px;
+    border-radius: 5px;
+}
+
+.container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 40px;
+}
+
+.bio{
+    width: 60%;
+}
+
+.image {
+    width: 35%;
+}

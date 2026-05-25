@@ -4,15 +4,24 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
+<div class="container">
 
-<h1>Ritwik Salunke</h1>
-<h2>Student at Johns Hopkins University</h2>
+    <div class="bio">
 
-<p>
-    Ritwik Salunke is a student in the Online AI Masters Program. He is learning software development with a focus on python.
-</p>
+    
+        <h1>Ritwik Salunke</h1>
+        <h2>Student at Johns Hopkins University</h2>
 
-<img src="{{url_for('static', filename='images/IMG_4635.jpg')}}"
-    width="250"
+        <p>
+            Ritwik Salunke is a student in the Online AI Masters Program. He is learning software development with a focus on python.
+        </p>
+    </div>
+
+    <div class="image">
+        <img src="{{url_for('static', filename='images/IMG_4635.jpg')}}"
+        width="250"
+    </div>
+
+</div>
 
 {% endblock %}
