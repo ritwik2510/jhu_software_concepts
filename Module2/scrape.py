@@ -27,7 +27,7 @@ def parse_entry(row):
     
 
     a_tag = row.find("a", href=True)
-    detail_url = urljoin("http://www.thegradcafe.com", a_tag["href"]) if a_tag else None
+    detail_url = urljoin("https://www.thegradcafe.com", a_tag["href"]) if a_tag else None
     
     
     return {
