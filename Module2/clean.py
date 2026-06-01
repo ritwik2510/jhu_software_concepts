@@ -77,7 +77,7 @@ def clean_record(record):
     return cleaned
 
 
-def clean_dataset(data):
+def clean_data(data):
     return [clean_record(record) for record in data]
 
 def load_data():
@@ -91,7 +91,7 @@ def save_data(data):
 
 if __name__ == "__main__":
     raw_data = load_data()
-    cleaned_data = clean_dataset(raw_data)
+    cleaned_data = clean_data(raw_data)
     save_data(cleaned_data)
 
     print(f"Cleaned {len(cleaned_data)} and new file is {OUTPUT_FILE}")

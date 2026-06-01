@@ -1,9 +1,15 @@
 import json
 import time
+import requests
 from urllib.parse import urlencode, urljoin
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
+
+session = requests.Session()
+session.headers.update({
+    "User-Agent": "Mozilla/5.0"
+})
 
 BASE_URL = "https://www.thegradcafe.com"
 
@@ -40,16 +46,24 @@ def parse_entry(row):
     }
 
 
-def parse_detail(driver, url):
-    driver.get(url)
-    time.sleep(0.5)
+def parse_detail(url):
+    try:
+        response = session.get(url, timeout=10)
+        soup = BeautifulSoup(response.text, "html.parser")
 
-    soup = BeautifulSoup(driver.page_source, "html.parser")
+        comments_tag = soup.find("p")
 
-    return {
-        "comments": soup.find("p").get_text(strip=True) if soup.find("p") else None,
-        "raw_text": soup.get_text(" ", strip=True)
-    }
+        return {
+            "comments": comments_tag.get_text(strip=True) if comments_tag else None,
+            "raw_text": soup.get_text(" ", strip=True)
+        }
+    
+    except Exception:
+        return {
+            "comments": None,
+            "raw_text" : None
+
+        }
 
 
 def scrape_data():
@@ -60,13 +74,14 @@ def scrape_data():
 
     try:
 
-        for page in range(1, 1000):
+        for page in range(1, 600):
+
 
             url = build_url(page)
             print(f"Scraping: {url}")
 
             driver.get(url)
-            time.sleep(5)
+            time.sleep(1)
 
             soup = BeautifulSoup(driver.page_source, "html.parser")
             rows = soup.find_all("tr")
@@ -80,14 +95,18 @@ def scrape_data():
                     continue
 
                 try: 
-                    detail =  parse_detail(driver, entry["url"])
+                    detail =  parse_detail(entry["url"])
                     entry.update(detail)
                     all_records.append(entry)
+
+                    if len(all_records) % 200 == 0:
+                        print(f"Checkpoint saved at {len(all_records)} records")
+                        save_data(all_records)
 
                 except Exception as e:
                     print("Error scraping", e)
         
-                time.sleep(1)
+                time.sleep(0.5)
     
     finally:
         driver.quit()
