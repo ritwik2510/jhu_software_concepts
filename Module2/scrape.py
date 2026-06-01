@@ -42,7 +42,7 @@ def parse_entry(row):
 
 def parse_detail(driver, url):
     driver.get(url)
-    time.sleep(2)
+    time.sleep(0.5)
 
     soup = BeautifulSoup(driver.page_source, "html.parser")
 
@@ -60,7 +60,7 @@ def scrape_data():
 
     try:
 
-        for page in range(1, 2):
+        for page in range(1, 1000):
 
             url = build_url(page)
             print(f"Scraping: {url}")

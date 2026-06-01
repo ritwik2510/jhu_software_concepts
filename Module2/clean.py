@@ -39,11 +39,11 @@ def clean_record(record):
     gre_match = re.search(r"GRE[:\s]*(\d+)", raw, re.IGNORECASE)
     cleaned["gre"] = int(gre_match.group(1)) if gre_match else None
 
-    gre_v_match = re.search(r"verbal|v)[:\s]*(\d+)", raw, re.IGNORECASE)
+    gre_v_match = re.search(r"(verbal|v)[:\s]*(\d+)", raw, re.IGNORECASE)
     cleaned["gre_v"] = int(gre_v_match.group(2)) if gre_v_match else None
 
     gre_aw_match = re.search(r"(awa|writing)[:\s]*(\d+(\.\d+)?)", raw, re.IGNORECASE)
-    cleaned["gre_aw"] = int(gre_aw_match.group(3)) if gre_aw_match else None
+    cleaned["gre_aw"] = float(gre_aw_match.group(3)) if gre_aw_match else None
 
     text_lower = raw.lower()
 
