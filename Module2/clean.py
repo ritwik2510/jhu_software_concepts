@@ -21,7 +21,7 @@ def extract1(text):
 def extract_int(text):
     if not text:
         return None
-    match = re.search(r"/d+", str(text))
+    match = re.search(r"\d+", str(text))
     return int(match.group()) if match else None
 
 
@@ -34,9 +34,9 @@ def clean_record(record):
 
     cleaned["gpa"] = extract1(cleaned.get("raw_text"))
 
-    raw = cleaned.get("raw_text", "")
+    raw = cleaned.get("raw_text") or ""
 
-    gre_match = re.search(r"GRE[:\s]*(\d+)", raw, re.IGNORECASE)
+    gre_match = re.search(r"GRE[:\s]*(\d{2,3})", raw, re.IGNORECASE)
     cleaned["gre"] = int(gre_match.group(1)) if gre_match else None
 
     gre_v_match = re.search(r"(verbal|v)[:\s]*(\d+)", raw, re.IGNORECASE)
@@ -63,7 +63,7 @@ def clean_record(record):
         cleaned["degree_type"] = None
     
 
-    if "international" in text_lower:
+    if "international" in text_lower and "domestic" not in text_lower:
         cleaned["international"] = "International"
     elif "american" in text_lower or "domestic" in text_lower or "us citizen" in text_lower:
         cleaned["international"] = "Domestic"

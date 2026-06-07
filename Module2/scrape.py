@@ -74,7 +74,7 @@ def scrape_data():
 
     try:
 
-        for page in range(1, 600):
+        for page in range(1, 1500):
 
 
             url = build_url(page)
