@@ -1,0 +1,37 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GradCafe Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<h1>GradCafe Analysis Dashboard</h1>
+
+<div class="card">
+    <h3>Total Applications (Fall 2026)</h3>
+    <p>{{ q1 }}</p>
+</div>
+
+<div class="card">
+    <h3>% International Students</h3>
+    <p>{{ q2 }}</p>
+</div>
+
+<div class="card">
+    <h3>% Acceptances</h3>
+    <p>{{ q5 }}</p>
+</div>
+
+<form action="/pull" method="post">
+    <button>Pull Data</button>
+</form>
+
+<form action="/update" method="post">
+    <button>Update Analysis</button>
+</form>
+
+</body>
+</html>
