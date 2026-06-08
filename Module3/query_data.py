@@ -33,7 +33,7 @@ def main():
         """
         SELECT COUNT(*) 
         FROM applicants 
-        WHERE term ILIKE '%Fall 2026%';
+        WHERE term = 'Fall 2026';
         """
     )
 
@@ -43,8 +43,11 @@ def main():
         """
         SELECT 
         ROUND(
-            100.0 * SUM(CASE WHEN us_or_international != 'American' THEN 1 ELSE 0 END)
-            / COUNT(*), 2)
+            100.0 * SUM(
+            CASE 
+                WHEN LOWER(COALESCE(us_or_international,'')) LIKE '%international%' 
+                    THEN 1 ELSE 0 END
+            ) / COUNT(*), 2)
         FROM applicants;
         """
     )
@@ -54,10 +57,10 @@ def main():
         "3. Average GPA and GRE scores",
         """
         SELECT
-            ROUND(AVG(gpa), 2),
-            ROUND(AVG(gre), 2),
-            ROUND(AVG(gre_v), 2),
-            ROUND(AVG(gre_aw), 2)
+            ROUND(AVG(gpa)::numeric, 2),
+            ROUND(AVG(gre)::numeric, 2),
+            ROUND(AVG(gre_v)::numeric, 2),
+            ROUND(AVG(gre_aw)::numeric, 2)
         FROM applicants
         WHERE gpa IS NOT NULL;
         """
@@ -67,10 +70,16 @@ def main():
     run_query(cur,
         "4. GPA of American Students (Fall 2026)",
         """
-        SELECT ROUND(AVG(gpa), 2)
+        SELECT ROUND(AVG(gpa)::numeric, 2)
         FROM applicants
-        WHERE term ILIKE '%Fall 2026%'
-        AND us_or_international = 'American';
+        WHERE term = 'Fall 2026'
+        AND gpa IS NOT NULL
+        AND (
+            LOWER(us_or_international) LIKE '%american%'
+            OR LOWER(us_or_international) LIKE '%us%'
+            OR LOWER(us_or_international) LIKE '%domestic%'
+            OR LOWER(us_or_international) LIKE '%usa%'
+        );
         """
     )
 
@@ -82,7 +91,8 @@ def main():
             100.0 * SUM(CASE WHEN status ILIKE '%accept%' THEN 1 ELSE 0 END)
             / COUNT(*), 2)
         FROM applicants
-        WHERE term ILIKE '%Fall 2026%';
+        WHERE term = 'Fall 2026';
+
         """
     )
 
@@ -90,9 +100,10 @@ def main():
     run_query(cur,
         "6. GPA of Accepted Students",
         """
-        SELECT ROUND(AVG(gpa), 2)
+        SELECT ROUND(AVG(gpa)::numeric, 2)
         FROM applicants
-        WHERE status ILIKE '%accept%';
+        WHERE status ILIKE '%accept%'
+        AND term = 'Fall 2026';
         """
     )
 
@@ -102,9 +113,13 @@ def main():
         """
         SELECT COUNT(*)
         FROM applicants
-        WHERE program ILIKE '%Johns Hopkins%'
-        AND program ILIKE '%Computer Science%'
-        AND program ILIKE '%Master%';
+        WHERE LOWER(llm_generated_university) LIKE '%johns hopkins%'
+        AND LOWER(llm_generated_program) LIKE '%computer%'
+        AND (
+            llm_generated_program ILIKE '%MS%'
+            OR llm_generated_program ILIKE '%M.S%'
+            OR llm_generated_program ILIKE '%Masters%'
+        );
         """
     )
 
@@ -115,26 +130,34 @@ def main():
         SELECT COUNT(*)
         FROM applicants
         WHERE status ILIKE '%accept%'
-        AND term ILIKE '%2026%'
-        AND program ILIKE ANY (ARRAY[
-            '%MIT%',
-            '%Stanford%',
-            '%Carnegie Mellon%',
-            '%Georgetown%'
-        ])
-        AND program ILIKE '%PhD%'
-        AND program ILIKE '%Computer Science%';
+        AND term = 'Fall 2026'
+        AND (
+                llm_generated_program ILIKE '%PhD%'
+                OR program ILIKE '%PhD%'
+            );
         """
     )
 
-    # 9. Average GPA for each admission status
+    # 9. LLM Comparision for Question 8
     run_query(cur,
-        "9. Average GPA for each admission status",
+        "9. LLM Comparision for Question 8",
+        """
+
+        SELECT
+            COUNT(*) FILTER (WHERE llm_generated_program IS NOT NULL) AS llm_program_count,
+            COUNT(*) FILTER (WHERE llm_generated_university IS NOT NULL) AS llm_university_count
+            FROM applicants;
+        """
+    )
+
+    # 10. Average GPA for each admission status
+    run_query(cur,
+        "10. Average GPA for each admission status",
         """
 
         SELECT
             status,
-            ROUND(AVG(gpa), 2) AS avg_gpa
+            ROUND(AVG(gpa)::numeric, 2) AS avg_gpa
         FROM applicants
         WHERE gpa IS NOT NULL
         GROUP BY status
@@ -142,9 +165,9 @@ def main():
         """
     )
 
-    # 10. Top 10 most applied programs
+    # 11. Top 10 most applied programs
     run_query(cur,
-            "10. Top 10 most applied programs",
+            "11. Top 10 most applied programs",
             """
             SELECT program, COUNT(*) AS total
             FROM applicants

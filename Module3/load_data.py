@@ -50,7 +50,7 @@ def load_data():
                     row.get("url"),
                     row.get("status"),
                     row.get("term"),
-                    row.get("us_or_international"),
+                    row.get("international"),
                     row.get("gpa"),
                     row.get("gre"),
                     row.get("gre_v"),
