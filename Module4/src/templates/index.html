@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GradCafe Analysis Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<h1>GradCafe Analysis Dashboard</h1>
+
+<div class="question">
+    <h3>1. How many Fall 2026 applications are in the database?</h3>
+    <p>{{ q1 }}</p>
+</div>
+
+<div class="question">
+    <h3>2. What percentage of applicants are international students?</h3>
+    <p>{{ q2 }}%</p>
+</div>
+
+<div class="question">
+    <h3>3. What are the average GPA and GRE scores?</h3>
+    <p>
+        GPA: {{ q3_gpa }}<br>
+        GRE: {{ q3_gre }}<br>
+        GRE Verbal: {{ q3_grev }}<br>
+        GRE AW: {{ q3_aw }}
+    </p>
+</div>
+
+<div class="question">
+    <h3>4. What is the average GPA of American students applying for Fall 2026?</h3>
+    <p>{{ q4 }}</p>
+</div>
+
+<div class="question">
+    <h3>5. What percentage of Fall 2026 applicants were accepted?</h3>
+    <p>{{ q5 }}%</p>
+</div>
+
+<div class="question">
+    <h3>6. What is the average GPA of accepted students?</h3>
+    <p>{{ q6 }}</p>
+</div>
+
+<div class="question">
+    <h3>7. How many applicants applied to Johns Hopkins MS Computer Science?</h3>
+    <p>{{ q7 }}</p>
+</div>
+
+<div class="question">
+    <h3>8. How many Fall 2026 applicants were accepted into Computer Science PhD programs?</h3>
+    <p>{{ q8 }}</p>
+</div>
+
+<div class="question">
+    <h3>9. How many records were enriched using the LLM?</h3>
+    <p>
+        Programs identified: {{ q9_programs }}<br>
+        Universities identified: {{ q9_universities }}
+    </p>
+</div>
+
+<div class="question">
+    <h3>10. Average GPA by admission status</h3>
+    <table>
+        <tr>
+            <th>Status</th>
+            <th>Average GPA</th>
+        </tr>
+        {% for row in q10 %}
+        <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="question">
+    <h3>11. Top 10 most applied programs</h3>
+    <table>
+        <tr>
+            <th>Program</th>
+            <th>Applications</th>
+        </tr>
+        {% for row in q11 %}
+        <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<form action="/pull" method="post">
+    <button type="submit">Pull New Data</button>
+</form>
+
+<form action="/update" method="post">
+    <button type="submit">Update Analysis</button>
+</form>
+
+</body>
+</html>
