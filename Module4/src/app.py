@@ -6,16 +6,17 @@ from src import clean, scrape, query_data, load_data
 
 scraping_running = False
 
-DB_CONFIG = {
-    "host": "localhost",
-    "database": "gradcafe",
-    "user": "postgres",
-    "password": "postgres"
-}
-
 def get_connection():
     try:
-        return psycopg2.connect(**DB_CONFIG)
+        db_url = current_app.config.get("DATABASE_URL")
+    except RuntimeError:
+        db_url= None
+
+    if not db_url:
+        db_url = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@localhost/gradcafe")
+
+    try:
+        return psycopg2.connect(db_url)
     except Exception:
         return None
 
@@ -49,7 +50,7 @@ def create_app(test_config=None):
 
         def safe_get(query, default=None):
             result = fetch(query)
-            if not result or not result[0]:
+            if not result or not result[0] or result[0][0] is None:
                 return default
             return result[0]
 
@@ -165,8 +166,8 @@ def create_app(test_config=None):
         return render_template(
             "index.html",
 
-            q1=q1[0] if q1 else 0,
-            q2=q2[0] if q2 else 0,
+            q1=q1[0] if q1 and q1[0] is not None else 0,
+            q2=q2[0] if q2 and q2[0] is not None else 0,
 
             q3_gpa=q3[0] if q3 else None,
             q3_gre=q3[1] if q3 else None,
@@ -186,20 +187,15 @@ def create_app(test_config=None):
             q11=q11
         )
     
-    clean.main
-    scrape.main
-    query_data.main
-    load_data.main
+    
     @app.route("/pull-data", methods=["POST"])
     def pull():
         global scraping_running
 
         if scraping_running:
             return jsonify({"busy": True}), 409
-        
-        import load_data
-        load_data.main()
 
+        load_data.main()
         return jsonify({"ok": True}), 200
         
 
@@ -209,14 +205,13 @@ def create_app(test_config=None):
 
         if scraping_running:
             return jsonify({"busy": True}), 409
-        
-        scraping_running = True
 
+        scraping_running = True
         try:
-            import query_data
             query_data.main()
         finally:
             scraping_running = False
+
         return jsonify({"ok": True}), 200
 
     return app

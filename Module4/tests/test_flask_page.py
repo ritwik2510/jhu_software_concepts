@@ -1,29 +1,16 @@
-import pytest
+def test_app_factory_exists():
+    from src.app import create_app
+    app = create_app({"TESTING": True})
+    assert app is not None
 
 
-@pytest.mark.web
-def test_analysis_page_loads(client):
-    response = client.get("/analysis")
+def test_get_analysis_page(client):
+    res = client.get("/analysis")
+    assert res.status_code == 200
 
-    assert response.status_code == 200
+    html = res.data.decode()
 
-
-@pytest.mark.web
-def test_page_contains_analysis(client):
-    response = client.get("/analysis")
-
-    assert b"Analysis" in response.data
-
-
-@pytest.mark.web
-def test_pull_button_exists(client):
-    response = client.get("/analysis")
-
-    assert b"Pull Data" in response.data
-
-
-@pytest.mark.web
-def test_update_button_exists(client):
-    response = client.get("/analysis")
-
-    assert b"Update Analysis" in response.data
+    assert "Analysis" in html
+    assert "Answer" in html
+    assert "Pull Data" in html
+    assert "Update Analysis" in html

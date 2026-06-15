@@ -27,7 +27,7 @@ def run_query(cur, title, query):
     for row in result:
         print(row)
 
-def main():
+def query_data():
     conn = connect()
     cur = conn.cursor()
 
@@ -185,4 +185,4 @@ def main():
     conn.close()
 
 if __name__ == "__main__":
-    main()
+    query_data()
