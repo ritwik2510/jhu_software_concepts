@@ -6,6 +6,10 @@ from urllib.parse import urlencode, urljoin
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
+def main():
+    print("running scrape step")
+    
+
 session = requests.Session()
 session.headers.update({
     "User-Agent": "Mozilla/5.0"

@@ -2,6 +2,10 @@
 
 import psycopg2
 
+def main():
+    print("running query step")
+
+
 DB_CONFIG = {
     "host": "localhost",
     "database": "gradcafe",

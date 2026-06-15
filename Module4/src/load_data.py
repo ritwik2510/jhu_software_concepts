@@ -9,24 +9,28 @@ DB_CONFIG = {
     "password": "postgres"
 }
 
+def main():
+    print("loading data into DB")
+    
 def connect():
     return psycopg2.connect(**DB_CONFIG)
 
 def load_data():
     conn = connect()
-    cur = conn.cursor() 
+    cur = conn.cursor()
 
-    with open("llm_extend_applicant_data.json", "r", encoding="utf-8") as f:
-        data = json.load(f)
+    try:
+        with open("llm_extend_applicant_data.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
 
-    print(f"Total records found: {len(data)}")
+        print(f"Total records found: {len(data)}")
 
-    for i, row in enumerate(data):
-        if not row.get("program"):
-            continue
+        for i, row in enumerate(data):
+            if not row.get("program"):
+                continue
 
-        try:
-            cur.execute("""
+            try:
+                cur.execute("""
                     INSERT INTO applicants (
                         program,
                         comments,
@@ -57,20 +61,25 @@ def load_data():
                     row.get("gre_aw"),
                     row.get("llm_generated_program"),
                     row.get("llm_generated_university")
-                )) 
-            
-        except Exception as e:
-            conn.rollback()
-            print("Error on row", i, ":", e)
-            continue
+                ))
 
-        if i > 0 and i % 500 == 0:
-            conn.commit()
-            print(f"Inserted {i} rows...")
-        
-    conn.commit()
-    cur.close()
-    conn.close()
+            except Exception as e:
+                conn.rollback()
+                print("Error on row", i, ":", e)
+                continue
+
+            if i > 0 and i % 500 == 0:
+                conn.commit()
+                print(f"Inserted {i} rows...")
+
+        conn.commit()
+
+    except Exception as e:
+        print("Failed to load data:", e)
+
+    finally:
+        cur.close()
+        conn.close()
 
     print("DONE LOADING DATA INTO POSTGRES")
 

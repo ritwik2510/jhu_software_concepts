@@ -4,6 +4,12 @@ import re
 INPUT_FILE = "applicant_data.json"
 OUTPUT_FILE = "llm_extend_applicant_data.json"
 
+def main():
+    raw_data = load_data()
+    cleaned_data = clean_data(raw_data)
+    save_data(cleaned_data)
+    print(f"Cleaned {len(cleaned_data)} records")
+
 
 def clean_text(val):
     if val is None:
@@ -104,9 +110,3 @@ def save_data(data):
         json.dump(data, f, indent=2)
 
 
-if __name__ == "__main__":
-    raw_data = load_data()
-    cleaned_data = clean_data(raw_data)
-    save_data(cleaned_data)
-
-    print(f"Cleaned {len(cleaned_data)} and new file is {OUTPUT_FILE}")
