@@ -32,27 +32,39 @@ def clean_record(record):
     for field in ["university", "program", "status", "comments"]:
         cleaned[field] = clean_text(cleaned.get(field))
 
-    cleaned["gpa"] = extract1(cleaned.get("raw_text"))
-
     raw = cleaned.get("raw_text") or ""
 
-    gre_match = re.search(r"GRE[:\s]*(\d{2,3})", raw, re.IGNORECASE)
+
+    gpa_match = re.search(r"gpa[:\s]*([0-4]\.\d{1,2}|4\.0)", raw, re.IGNORECASE)
+    cleaned["gpa"] = float(gpa_match.group(1)) if gpa_match else None
+
+
+    gre_match = re.search(r"GRE[:\s]*(\d{3})", raw, re.IGNORECASE)
     cleaned["gre"] = int(gre_match.group(1)) if gre_match else None
 
-    gre_v_match = re.search(r"(verbal|v)[:\s]*(\d+)", raw, re.IGNORECASE)
+
+    gre_v_match = re.search(r"(verbal|v)\s*[:\-]?\s*(\d{2,3})", raw, re.IGNORECASE)
     cleaned["gre_v"] = int(gre_v_match.group(2)) if gre_v_match else None
 
+
     gre_aw_match = re.search(r"(awa|writing)[:\s]*(\d+(\.\d+)?)", raw, re.IGNORECASE)
-    cleaned["gre_aw"] = float(gre_aw_match.group(3)) if gre_aw_match else None
+    cleaned["gre_aw"] = float(gre_aw_match.group(2)) if gre_aw_match else None
 
     text_lower = raw.lower()
 
-    if "accept" in text_lower:
-        cleaned["decision"] = "Accepted"
-    elif "reject" in text_lower:
-        cleaned["decision"] = "Rejected"
+   
+    text_lower = raw.lower()
+
+    if re.search(r"\baccepted\b", text_lower):
+        cleaned["status"] = "Accepted"
+    elif re.search(r"\brejected\b", text_lower):
+        cleaned["status"] = "Rejected"
+    elif "waitlisted" in text_lower or "wait listed" in text_lower:
+        cleaned["status"] = "Waitlisted"
+    elif "interview" in text_lower:
+        cleaned["status"] = "Interview"
     else:
-        cleaned["decision"] = "Unknown"
+        cleaned["status"] = "Unknown"
 
     
     if "phd" in text_lower or "ph.d" in text_lower:
@@ -73,6 +85,9 @@ def clean_record(record):
 
     year_match = re.search(r"(20\d{2})", raw)
     cleaned["year"] = int(year_match.group(1)) if year_match else None
+
+    cleaned["llm_generated_program"] = cleaned.get("program")
+    cleaned["llm_generated_university"] = cleaned.get("university")
 
     return cleaned
 
