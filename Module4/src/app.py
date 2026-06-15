@@ -1,5 +1,5 @@
 
-from flask import Flask, render_template, request, redirect, jsonify
+from flask import Flask, render_template, request, redirect, jsonify, current_app
 import psycopg2
 import os
 from src import clean, scrape, query_data, load_data

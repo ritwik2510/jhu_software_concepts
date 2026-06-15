@@ -3,7 +3,7 @@ import src.app as app_module
 def test_end_to_end(client, monkeypatch):
     # fake external dependencies
     monkeypatch.setattr("src.clean.clean_data", lambda x: x)
-    monkeypatch.setattr("src.scrape.scrape", lambda: [])
+    monkeypatch.setattr("src.scrape.scrape_data", lambda *args, **kwargs: [])
     monkeypatch.setattr("src.load_data.load_data", lambda: None)
     monkeypatch.setattr("src.query_data.main", lambda: None)
 
