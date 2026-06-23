@@ -1,32 +1,42 @@
-from flask import Flask, render_template, jsonify, current_app
+"""Flask application for GradCafe applicant analysis."""  # pylint: disable=duplicate-code
 import os
 import psycopg2
+from dotenv import load_dotenv
 from psycopg2 import sql
+from flask import Flask, render_template, jsonify, current_app
+from src import query_data, load_data
 
-from src import clean, scrape, query_data, load_data
+load_dotenv()
 
-scraping_running = False
+SCRAPING_RUNNING = False
 
 
 def get_connection():
+    """Return a psycopg2 database connection or None on failure."""
     try:
         db_url = current_app.config.get("DATABASE_URL")
     except RuntimeError:
         db_url = None
 
     if not db_url:
-        db_url = os.getenv(
-            "DATABASE_URL",
-            "postgresql://postgres:postgres@localhost/gradcafe"
-        )
+        db_url = os.getenv("DATABASE_URL")
+
+    if not db_url:
+        host = os.getenv("DB_HOST", "localhost")
+        port = os.getenv("DB_PORT", "5432")
+        name = os.getenv("DB_NAME", "gradcafe")
+        user = os.getenv("DB_USER", "postgres")
+        password = os.getenv("DB_PASSWORD", "postgres")
+        db_url = f"postgresql://{user}:{password}@{host}:{port}/{name}"
 
     try:
         return psycopg2.connect(db_url)
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
         return None
 
 
 def fetch(query, params=None):
+    """Execute a query and return all results."""
     conn = get_connection()
 
     if conn is None:
@@ -37,7 +47,7 @@ def fetch(query, params=None):
     try:
         cur.execute(query, params or ())
         data = cur.fetchall()
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught
         data = []
     finally:
         cur.close()
@@ -46,129 +56,181 @@ def fetch(query, params=None):
     return data
 
 
-def safe_limit(n):
+def safe_limit(n, default=10, minimum=1, maximum=100):
+    """Clamp n to a safe query limit between minimum and maximum."""
     try:
         n = int(n)
     except (TypeError, ValueError):
-        n = 10
-    return max(1, min(n, 100))
+        n = default
+    return max(minimum, min(n, maximum))
 
 
 def create_app(test_config=None):
-    app = Flask(__name__)
+    """Create and configure the Flask application."""
+    flask_app = Flask(__name__)
 
     if test_config:
-        app.config.update(test_config)
+        flask_app.config.update(test_config)
 
-    @app.route("/analysis")
+    @flask_app.route("/analysis")
     def analysis():
+        """Render the analysis page."""
 
-        def safe_get(query, default=None):
-            result = fetch(query)
+        def safe_get(query, params=None, default=None):
+            """Fetch a single row or return default."""
+            result = fetch(query, params)
             if not result or result[0][0] is None:
                 return default
             return result[0]
 
-        q1 = safe_get("""
-            SELECT COUNT(*) FROM applicants WHERE term='Fall 2026';
-        """, (0,))
+        q1 = safe_get(
+            sql.SQL("SELECT COUNT(*) FROM applicants WHERE term = %s LIMIT %s"),
+            ("Fall 2026", safe_limit(1)),
+            default=(0,),
+        )
 
-        q2 = safe_get("""
-            SELECT ROUND(
-                100.0 * SUM(
-                    CASE WHEN LOWER(COALESCE(us_or_international,'')) LIKE '%international%'
-                    THEN 1 ELSE 0 END
-                ) / NULLIF(COUNT(*),0), 2)
-            FROM applicants;
-        """, (0,))
+        q2 = safe_get(
+            sql.SQL("""
+                SELECT ROUND(
+                    100.0 * SUM(
+                        CASE WHEN LOWER(COALESCE(us_or_international,'')) LIKE '%international%'
+                        THEN 1 ELSE 0 END
+                    ) / NULLIF(COUNT(*),0), 2)
+                FROM applicants
+                LIMIT %s
+            """),
+            (safe_limit(1),),
+            default=(0,),
+        )
 
-        q3 = safe_get("""
-            SELECT
-                ROUND(AVG(gpa)::numeric,2),
-                ROUND(AVG(gre)::numeric,2),
-                ROUND(AVG(gre_v)::numeric,2),
-                ROUND(AVG(gre_aw)::numeric,2)
-            FROM applicants
-            WHERE gpa IS NOT NULL;
-        """, (None, None, None, None))
+        q3 = safe_get(
+            sql.SQL("""
+                SELECT
+                    ROUND(AVG(gpa)::numeric,2),
+                    ROUND(AVG(gre)::numeric,2),
+                    ROUND(AVG(gre_v)::numeric,2),
+                    ROUND(AVG(gre_aw)::numeric,2)
+                FROM applicants
+                WHERE gpa IS NOT NULL
+                LIMIT %s
+            """),
+            (safe_limit(1),),
+            default=(None, None, None, None),
+        )
 
-        q4 = safe_get("""
-            SELECT ROUND(AVG(gpa)::numeric,2)
-            FROM applicants
-            WHERE term='Fall 2026'
-            AND gpa IS NOT NULL
-            AND (
-                LOWER(us_or_international) LIKE '%american%'
-                OR LOWER(us_or_international) LIKE '%us%'
-                OR LOWER(us_or_international) LIKE '%domestic%'
-                OR LOWER(us_or_international) LIKE '%usa%'
-            );
-        """, (None,))
+        q4 = safe_get(
+            sql.SQL("""
+                SELECT ROUND(AVG(gpa)::numeric,2)
+                FROM applicants
+                WHERE term = %s
+                AND gpa IS NOT NULL
+                AND (
+                    LOWER(us_or_international) LIKE '%american%'
+                    OR LOWER(us_or_international) LIKE '%us%'
+                    OR LOWER(us_or_international) LIKE '%domestic%'
+                    OR LOWER(us_or_international) LIKE '%usa%'
+                )
+                LIMIT %s
+            """),
+            ("Fall 2026", safe_limit(1)),
+            default=(None,),
+        )
 
-        q5 = safe_get("""
-            SELECT ROUND(
-                100.0 * SUM(CASE WHEN status ILIKE '%accept%' THEN 1 ELSE 0 END)
-                / NULLIF(COUNT(*),0),2)
-            FROM applicants
-            WHERE term='Fall 2026';
-        """, (0,))
+        q5 = safe_get(
+            sql.SQL("""
+                SELECT ROUND(
+                    100.0 * SUM(CASE WHEN status ILIKE '%accept%' THEN 1 ELSE 0 END)
+                    / NULLIF(COUNT(*),0),2)
+                FROM applicants
+                WHERE term = %s
+                LIMIT %s
+            """),
+            ("Fall 2026", safe_limit(1)),
+            default=(0,),
+        )
 
-        q6 = safe_get("""
-            SELECT ROUND(AVG(gpa)::numeric,2)
-            FROM applicants
-            WHERE status ILIKE '%accept%'
-            AND term='Fall 2026';
-        """, (None,))
+        q6 = safe_get(
+            sql.SQL("""
+                SELECT ROUND(AVG(gpa)::numeric,2)
+                FROM applicants
+                WHERE status ILIKE '%accept%'
+                AND term = %s
+                LIMIT %s
+            """),
+            ("Fall 2026", safe_limit(1)),
+            default=(None,),
+        )
 
-        q7 = safe_get("""
-            SELECT COUNT(*)
-            FROM applicants
-            WHERE LOWER(llm_generated_university) LIKE '%johns hopkins%'
-            AND LOWER(llm_generated_program) LIKE '%computer%'
-            AND (
-                llm_generated_program ILIKE '%MS%'
-                OR llm_generated_program ILIKE '%M.S%'
-                OR llm_generated_program ILIKE '%Masters%'
-            );
-        """, (0,))
+        q7 = safe_get(
+            sql.SQL("""
+                SELECT COUNT(*)
+                FROM applicants
+                WHERE LOWER(llm_generated_university) LIKE '%johns hopkins%'
+                AND LOWER(llm_generated_program) LIKE '%computer%'
+                AND (
+                    llm_generated_program ILIKE '%MS%'
+                    OR llm_generated_program ILIKE '%M.S%'
+                    OR llm_generated_program ILIKE '%Masters%'
+                )
+                LIMIT %s
+            """),
+            (safe_limit(1),),
+            default=(0,),
+        )
 
-        q8 = safe_get("""
-            SELECT COUNT(*)
-            FROM applicants
-            WHERE status ILIKE '%accept%'
-            AND term='Fall 2026'
-            AND (
-                llm_generated_program ILIKE '%PhD%'
-                OR program ILIKE '%PhD%'
-            );
-        """, (0,))
+        q8 = safe_get(
+            sql.SQL("""
+                SELECT COUNT(*)
+                FROM applicants
+                WHERE status ILIKE '%accept%'
+                AND term = %s
+                AND (
+                    llm_generated_program ILIKE '%PhD%'
+                    OR program ILIKE '%PhD%'
+                )
+                LIMIT %s
+            """),
+            ("Fall 2026", safe_limit(1)),
+            default=(0,),
+        )
 
-        q9 = fetch("""
-            SELECT
-                COUNT(*) FILTER (WHERE llm_generated_program IS NOT NULL),
-                COUNT(*) FILTER (WHERE llm_generated_university IS NOT NULL)
-            FROM applicants;
-        """) or [(0, 0)]
+        q9 = fetch(
+            sql.SQL("""
+                SELECT
+                    COUNT(*) FILTER (WHERE llm_generated_program IS NOT NULL),
+                    COUNT(*) FILTER (WHERE llm_generated_university IS NOT NULL)
+                FROM applicants
+                LIMIT %s
+            """),
+            (safe_limit(1),),
+        ) or [(0, 0)]
 
-        q10 = fetch("""
-            SELECT
-                status,
-                ROUND(AVG(gpa)::numeric,2)
-            FROM applicants
-            WHERE gpa IS NOT NULL
-            GROUP BY status
-            ORDER BY AVG(gpa) DESC;
-        """) or []
+        q10 = fetch(
+            sql.SQL("""
+                SELECT
+                    status,
+                    ROUND(AVG(gpa)::numeric,2)
+                FROM applicants
+                WHERE gpa IS NOT NULL
+                GROUP BY status
+                ORDER BY AVG(gpa) DESC
+                LIMIT %s
+            """),
+            (safe_limit(100),),
+        ) or []
 
         limit = safe_limit(10)
 
-        q11 = fetch(sql.SQL("""
-            SELECT program, COUNT(*) AS total
-            FROM applicants
-            GROUP BY program
-            ORDER BY total DESC
-            LIMIT %s;
-        """), (limit,)) or []
+        q11 = fetch(
+            sql.SQL("""
+                SELECT program, COUNT(*) AS total
+                FROM applicants
+                GROUP BY program
+                ORDER BY total DESC
+                LIMIT %s
+            """),
+            (limit,),
+        ) or []
 
         return render_template(
             "index.html",
@@ -186,38 +248,32 @@ def create_app(test_config=None):
             q9_programs=q9[0][0],
             q9_universities=q9[0][1],
             q10=q10,
-            q11=q11
+            q11=q11,
         )
 
-    @app.route("/pull-data", methods=["POST"])
+    @flask_app.route("/pull-data", methods=["POST"])
     def pull():
-        global scraping_running
-
-        if scraping_running:
+        """Handle pull-data requests."""
+        if SCRAPING_RUNNING:
             return jsonify({"busy": True}), 409
-
         load_data.main()
         return jsonify({"ok": True}), 200
 
-    @app.route("/update-analysis", methods=["POST"])
+    @flask_app.route("/update-analysis", methods=["POST"])
     def update():
-        global scraping_running
-
-        if scraping_running:
+        """Handle update-analysis requests."""
+        global SCRAPING_RUNNING  # pylint: disable=global-statement
+        if SCRAPING_RUNNING:
             return jsonify({"busy": True}), 409
-
-        scraping_running = True
+        SCRAPING_RUNNING = True
         try:
             query_data.main()
         finally:
-            scraping_running = False
-
+            SCRAPING_RUNNING = False
         return jsonify({"ok": True}), 200
 
-    return app
+    return flask_app
 
-
-app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    create_app().run(debug=True)

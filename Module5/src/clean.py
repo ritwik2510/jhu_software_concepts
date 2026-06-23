@@ -1,10 +1,13 @@
+"""code for cleaning"""
 import json
 import re
 
 INPUT_FILE = "applicant_data.json"
 OUTPUT_FILE = "llm_extend_applicant_data.json"
 
+
 def main():
+    """main function"""
     raw_data = load_data()
     cleaned_data = clean_data(raw_data)
     save_data(cleaned_data)
@@ -12,6 +15,7 @@ def main():
 
 
 def clean_text(val):
+    """cleans a text value"""
     if val is None:
         return None
     val = val.strip()
@@ -19,12 +23,15 @@ def clean_text(val):
 
 
 def extract1(text):
+    """extracts a float from a text string"""
     if not text:
         return None
     match = re.search(r"\d+(\.\d+)?", str(text))
     return float(match.group()) if match else None
 
+
 def extract_int(text):
+    """extracts an integer from a text string"""
     if not text:
         return None
     match = re.search(r"\d+", str(text))
@@ -32,7 +39,7 @@ def extract_int(text):
 
 
 def clean_record(record):
-
+    """cleans a single record"""
     cleaned = record.copy()
 
     for field in ["university", "program", "status", "comments"]:
@@ -40,25 +47,18 @@ def clean_record(record):
 
     raw = cleaned.get("raw_text") or ""
 
-
     gpa_match = re.search(r"gpa[:\s]*([0-4]\.\d{1,2}|4\.0)", raw, re.IGNORECASE)
     cleaned["gpa"] = float(gpa_match.group(1)) if gpa_match else None
-
 
     gre_match = re.search(r"GRE[:\s]*(\d{3})", raw, re.IGNORECASE)
     cleaned["gre"] = int(gre_match.group(1)) if gre_match else None
 
-
     gre_v_match = re.search(r"(verbal|v)\s*[:\-]?\s*(\d{2,3})", raw, re.IGNORECASE)
     cleaned["gre_v"] = int(gre_v_match.group(2)) if gre_v_match else None
-
 
     gre_aw_match = re.search(r"(awa|writing)[:\s]*(\d+(\.\d+)?)", raw, re.IGNORECASE)
     cleaned["gre_aw"] = float(gre_aw_match.group(2)) if gre_aw_match else None
 
-    text_lower = raw.lower()
-
-   
     text_lower = raw.lower()
 
     if re.search(r"\baccepted\b", text_lower):
@@ -72,14 +72,12 @@ def clean_record(record):
     else:
         cleaned["status"] = "Unknown"
 
-    
     if "phd" in text_lower or "ph.d" in text_lower:
         cleaned["degree_type"] = "PhD"
     elif "master" in text_lower or "ms" in text_lower:
         cleaned["degree_type"] = "Masters"
     else:
         cleaned["degree_type"] = None
-    
 
     if "international" in text_lower and "domestic" not in text_lower:
         cleaned["international"] = "International"
@@ -87,7 +85,6 @@ def clean_record(record):
         cleaned["international"] = "Domestic"
     else:
         cleaned["international"] = None
-    
 
     year_match = re.search(r"(20\d{2})", raw)
     cleaned["year"] = int(year_match.group(1)) if year_match else None
@@ -99,14 +96,17 @@ def clean_record(record):
 
 
 def clean_data(data):
+    """cleans the entire dataset"""
     return [clean_record(record) for record in data]
 
+
 def load_data():
+    """loads the data from a JSON file"""
     with open(INPUT_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
-    
+
+
 def save_data(data):
+    """saves the cleaned data to a JSON file"""
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
-
-

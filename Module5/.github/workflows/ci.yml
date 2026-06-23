@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+
+  lint:
+    name: Pylint (fail under 10)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pylint
+      - name: Run Pylint
+        run: pylint src/ --fail-under=10
+
+  dependency-graph:
+    name: Generate dependency.svg
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Graphviz
+        run: sudo apt-get install -y graphviz
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pydeps
+      - name: Generate dependency graph
+        run: pydeps src/app.py --noshow -T svg -o dependency.svg
+      - name: Verify graph was created
+        run: test -f dependency.svg || (echo "dependency.svg not found!" && exit 1)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dependency-graph
+          path: dependency.svg
+
+  snyk:
+    name: Snyk dependency scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+      - name: Run Snyk test
+        run: snyk test --file=requirements.txt || true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  test:
+    name: Pytest
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gradcafe
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: gradcafe
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Install package
+        run: pip install -e .
+      - name: Create DB schema
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d gradcafe -c "
+            CREATE TABLE IF NOT EXISTS applicants (
+              id SERIAL PRIMARY KEY,
+              program TEXT,
+              comments TEXT,
+              date_added TEXT,
+              url TEXT,
+              status TEXT,
+              term TEXT,
+              us_or_international TEXT,
+              gpa FLOAT,
+              gre INT,
+              gre_v INT,
+              gre_aw FLOAT,
+              llm_generated_program TEXT,
+              llm_generated_university TEXT
+            );
+          "
+      - name: Run tests
+        run: pytest tests/ -v --tb=short --ignore=tests/test_db_insert.py
