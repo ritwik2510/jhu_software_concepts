@@ -51,7 +51,7 @@ jobs:
 
       - name: Generate dependency graph
         run: |
-          pydeps Module5/src/app.py -T svg -o Module5/dependency.svg
+          pydeps Module5/src/app.py --noshow -T svg -o Module5/dependency.svg
 
       - name: Verify dependency graph exists
         run: |

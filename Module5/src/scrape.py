@@ -28,7 +28,7 @@ def build_url(page):
 
 def get_driver():
     """gets the web driver"""
-    driver = webdriver.Chrome
+    driver = webdriver.Chrome() # pylint: disable=not-callable
     return driver
 
 
