@@ -1,4 +1,4 @@
-import src.app as app_module
+import Module6.src.web.app as app_module
 
 def test_end_to_end(client, monkeypatch):
     # fake external dependencies

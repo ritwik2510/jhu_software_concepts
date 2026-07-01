@@ -4,7 +4,8 @@ import psycopg2
 from dotenv import load_dotenv
 from psycopg2 import sql
 from flask import Flask, render_template, jsonify, current_app
-from src import query_data, load_data
+from Module6.src.db import load_data
+from Module6.src.worker.etl import query_data
 
 load_dotenv()
 

@@ -1,10 +1,10 @@
 import pytest
 from unittest.mock import MagicMock
-import src.clean
-import src.load_data
-import src.query_data
-import src.scrape
-import src.app
+import Module6.src.worker.etl.clean
+import Module6.src.db.load_data
+import Module6.src.worker.etl.query_data
+import Module6.src.worker.etl.scrape
+import Module6.src.web.app
 
 @pytest.mark.buttons
 def test_scrape_engine_lifecycle(monkeypatch):
@@ -14,13 +14,13 @@ def test_scrape_engine_lifecycle(monkeypatch):
     monkeypatch.setattr("src.scrape.save_data", lambda x: None)
     monkeypatch.setattr("src.scrape.parse_detail", lambda url: {"comments": "ok", "raw_text": "ok"})
     
-    from src.scrape import scrape_data
+    from Module6.src.worker.etl.scrape import scrape_data
     results = scrape_data(pages_to_run=[1])
     assert isinstance(results, list)
 
 @pytest.mark.data
 def test_clean_utility_logic():
-    from src.clean import clean_text, extract1, extract_int, clean_record
+    from Module6.src.worker.etl.clean import clean_text, extract1, extract_int, clean_record
     assert clean_text("  test  ") == "test"
     assert clean_text(None) is None
     assert clean_text("   ") is None
@@ -45,7 +45,7 @@ def test_clean_utility_logic():
 
 @pytest.mark.data
 def test_data_io_logic(monkeypatch):
-    from src.clean import load_data, save_data, main as clean_main
+    from Module6.src.worker.etl.clean import load_data, save_data, main as clean_main
     monkeypatch.setattr("builtins.open", MagicMock())
     monkeypatch.setattr("json.load", lambda f: [])
     monkeypatch.setattr("json.dump", lambda d, f, indent: None)
@@ -56,9 +56,9 @@ def test_data_io_logic(monkeypatch):
 
 @pytest.mark.data
 def test_final_coverage(monkeypatch):
-    from src.scrape import scrape_data, parse_detail, parse_entry
-    from src.load_data import main as load_main
-    from src.query_data import main as query_main
+    from Module6.src.worker.etl.scrape import scrape_data, parse_detail, parse_entry
+    from Module6.src.db.load_data import main as load_main
+    from Module6.src.worker.etl.query_data import main as query_main
 
     mock_driver = MagicMock()
     mock_driver.page_source = "<html></html>"
@@ -86,5 +86,5 @@ def test_final_coverage(monkeypatch):
 @pytest.mark.web
 def test_app_config_missing(monkeypatch):
     monkeypatch.setattr("src.app.get_connection", lambda: None)
-    from src.app import get_connection
+    from Module6.src.web.app import get_connection
     assert get_connection() is None

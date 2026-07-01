@@ -1,5 +1,5 @@
 import psycopg2
-from src.load_data import load_data
+from Module6.src.db.load_data import load_data
 
 DB_CONFIG = {
     "host": "localhost",

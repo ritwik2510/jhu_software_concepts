@@ -1,10 +1,4 @@
-flask
-psycopg2-binary
 pytest
 pytest-cov
-beautifulsoup4
-selenium
-requests
 pylint
 pydeps
-python-dotenv
