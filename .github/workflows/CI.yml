@@ -11,91 +11,70 @@ jobs:
   lint:
     name: Pylint (10/10 required)
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         run: |
           pip install -r Module5/requirements.txt
           pip install pylint
-
       - name: Run Pylint
         run: |
           pylint Module5/src --fail-under=10
 
-
   dependency_graph:
     name: Dependency Graph
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install Graphviz
         run: |
           sudo apt-get update
           sudo apt-get install -y graphviz
-
       - name: Install dependencies
         run: |
           pip install -r Module5/requirements.txt
           pip install pydeps
-
       - name: Generate dependency graph (NO GUI OPEN)
         run: |
           pydeps Module5/src/app.py -T svg -o Module5/dependency.svg --noshow
-
       - name: Verify dependency graph exists
         run: |
           test -f Module5/dependency.svg || (echo "dependency.svg missing" && exit 1)
-
       - uses: actions/upload-artifact@v4
         with:
           name: dependency-graph
           path: Module5/dependency.svg
 
-
   snyk:
     name: Snyk Dependency Scan
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - uses: actions/setup-node@v4
         with:
           node-version: "18"
-
       - name: Install Snyk
         run: npm install -g snyk
-
       - name: Install dependencies
         run: pip install -r Module5/requirements.txt
-
       - name: Run Snyk test (non-blocking if no token)
         run: |
           snyk test --file=Module5/requirements.txt || true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-
   pytest:
     name: Pytest Suite
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:15
@@ -110,22 +89,17 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gradcafe
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         run: |
           pip install -r Module5/requirements.txt
           pip install pytest
-
       - name: Create DB schema
         run: |
           PGPASSWORD=postgres psql -h localhost -U postgres -d gradcafe -c "
@@ -146,6 +120,78 @@ jobs:
               llm_generated_university TEXT
           );
           "
-
       - name: Run tests
         run: pytest Module5/tests -v
+
+  module6-lint:
+    name: Module 6 Pylint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -r Module6/src/web/requirements.txt
+          pip install pylint
+      - name: Run Pylint
+        run: |
+          pylint Module6/src --fail-under=10
+
+  module6-pytest:
+    name: Module 6 Pytest
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: myuser
+          POSTGRES_PASSWORD: mypassword
+          POSTGRES_DB: mydatabase
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U myuser"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://myuser:mypassword@localhost:5432/mydatabase
+      RABBITMQ_URL: amqp://guest:guest@localhost:5672/%2F
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -r Module6/src/web/requirements.txt
+          pip install pytest pytest-cov
+      - name: Create DB schema
+        run: |
+          PGPASSWORD=mypassword psql -h localhost -U myuser -d mydatabase -c "
+          CREATE TABLE IF NOT EXISTS applicants (
+              id SERIAL PRIMARY KEY,
+              program TEXT,
+              comments TEXT,
+              date_added TEXT,
+              url TEXT,
+              status TEXT,
+              term TEXT,
+              us_or_international TEXT,
+              gpa TEXT,
+              gre TEXT,
+              gre_v TEXT,
+              gre_aw TEXT,
+              llm_generated_program TEXT,
+              llm_generated_university TEXT
+          );
+          CREATE TABLE IF NOT EXISTS ingestion_watermarks (
+              source TEXT PRIMARY KEY,
+              last_seen TEXT,
+              updated_at TIMESTAMPTZ DEFAULT now()
+          );
+          "
+      - name: Run tests
+        run: pytest Module6/tests -v --cov=Module6/src
