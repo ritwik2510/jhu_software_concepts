@@ -1,4 +1,4 @@
-pytest
-pytest-cov
-pylint
-pydeps
+pytest==8.4.2
+pytest-cov==6.2.1
+pylint==3.3.8
+pydeps==3.0.1
