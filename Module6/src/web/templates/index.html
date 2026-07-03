@@ -95,21 +95,19 @@
     </table>
 </div>
 
-<form action="/pull" method="post">
-    <button
-    type="submit"
-    data-testid="pull-data-btn">
-    Pull Data
-</button>
-</form>
+<button onclick="runTask('/tasks/scrape')">Scrape New Data</button>
+<button onclick="runTask('/tasks/recompute')">Recompute Analytics</button>
 
-<form action="/update" method="post">
-    <button
-    type="submit"
-    data-testid="update-analysis-btn">
-    Update Analysis
-</button>
-</form>
+<div id="banner" style="display:none; color:green;">✅ Request queued!</div>
 
+<script>
+async function runTask(url) {
+  const res = await fetch(url, { method: "POST" });
+  if (res.status === 202) {
+    document.getElementById("banner").style.display = "block";
+    setTimeout(() => location.reload(), 3000);  // reload page after 3 seconds
+  }
+}
+</script>
 </body>
 </html>

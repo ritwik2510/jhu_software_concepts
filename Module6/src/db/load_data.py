@@ -1,26 +1,56 @@
 """code for loading data"""
 import json
 import os
+
 import psycopg2
 
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "dbname": os.getenv("DB_NAME", "gradcafe"),
-    "user": os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("DB_PASSWORD", "postgres"),
-    "port": os.getenv("DB_PORT", "5432"),
-}
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "postgresql://postgres:postgres@localhost:5432/gradcafe",
+)
 
+DATA_PATH = os.environ.get(
+    "DATA_PATH",
+    "/app/data/llm_extend_applicant_data.json",
+)
 
-def main():
-    """main function"""
-    print("loading data into DB")
-    load_data()
+SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS applicants (
+    id                      SERIAL PRIMARY KEY,
+    program                 TEXT,
+    comments                TEXT,
+    date_added              TEXT,
+    url                     TEXT,
+    status                  TEXT,
+    term                    TEXT,
+    us_or_international     TEXT,
+    gpa                     TEXT,
+    gre                     TEXT,
+    gre_v                   TEXT,
+    gre_aw                  TEXT,
+    llm_generated_program   TEXT,
+    llm_generated_university TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ingestion_watermarks (
+    source      TEXT PRIMARY KEY,
+    last_seen   TEXT,
+    updated_at  TIMESTAMPTZ DEFAULT now()
+);
+"""
 
 
 def connect():
     """connects to the database"""
-    return psycopg2.connect(**DB_CONFIG)
+    return psycopg2.connect(DATABASE_URL)
+
+
+def init_schema(conn) -> None:
+    """creates the database tables if they don't exist"""
+    with conn.cursor() as cur:
+        cur.execute(SCHEMA_SQL)
+    conn.commit()
+    print("Schema ready.")
 
 
 def load_data():
@@ -29,7 +59,7 @@ def load_data():
     cur = conn.cursor()
 
     try:
-        with open("llm_extend_applicant_data.json", "r", encoding="utf-8") as f:
+        with open(DATA_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         print(f"Total records found: {len(data)}")
@@ -96,5 +126,16 @@ def load_data():
     print("DONE LOADING DATA INTO POSTGRES")
 
 
-if __name__ == "__main__":
+def main():
+    """main function"""
+    print("loading data into DB")
+    conn = connect()
+    try:
+        init_schema(conn)
+    finally:
+        conn.close()
     load_data()
+
+
+if __name__ == "__main__":
+    main()

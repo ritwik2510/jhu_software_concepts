@@ -1,11 +1,9 @@
-"""code for scrape.py"""
 import json
 import time
 from urllib.parse import urlencode, urljoin
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
-
 
 session = requests.Session()
 session.headers.update({
@@ -16,30 +14,30 @@ BASE_URL = "https://www.thegradcafe.com"
 
 
 def main():
-    """main function"""
     return scrape_data()
 
 
 def build_url(page):
-    """builds the URL for a given page"""
     params = {"page": page}
     return BASE_URL + "/survey/?" + urlencode(params)
 
 
 def get_driver():
-    """gets the web driver"""
-    driver = webdriver.Chrome() # pylint: disable=not-callable
-    return driver
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.binary_location = "/usr/bin/chromium"
+    return webdriver.Chrome(options=options)
 
 
 def parse_entry(row):
-    """parses a single entry from the table row"""
     cells = row.find_all("td")
     if len(cells) < 4:
         return None
 
     a_tag = row.find("a", href=True)
-    detail_url = urljoin("https://www.thegradcafe.com", a_tag["href"]) if a_tag else None
+    detail_url = urljoin(BASE_URL, a_tag["href"]) if a_tag else None
 
     return {
         "university": cells[0].get_text(" ", strip=True),
@@ -52,7 +50,6 @@ def parse_entry(row):
 
 
 def parse_detail(url):
-    """parses detail"""
     try:
         response = session.get(url, timeout=10)
         soup = BeautifulSoup(response.text, "html.parser")
@@ -62,7 +59,7 @@ def parse_detail(url):
             "comments": comments_tag.get_text(strip=True) if comments_tag else None,
             "raw_text": soup.get_text(" ", strip=True),
         }
-    except Exception:  # pylint: disable=broad-exception-caught
+    except Exception:
         return {
             "comments": None,
             "raw_text": None,
@@ -70,12 +67,11 @@ def parse_detail(url):
 
 
 def scrape_data(pages_to_run=None):
-    """scrapes data"""
     driver = get_driver()
     all_records = []
 
     if pages_to_run is None:
-        pages_to_run = range(1, 1500)
+        pages_to_run = range(1, 50)  # reduced for stability (1500 is overkill)
 
     try:
         for page in pages_to_run:
@@ -105,10 +101,11 @@ def scrape_data(pages_to_run=None):
                         print(f"Checkpoint saved at {len(all_records)} records")
                         save_data(all_records)
 
-                except Exception as e:  # pylint: disable=broad-exception-caught
+                except Exception as e:
                     print("Error scraping", e)
 
             time.sleep(0.1)
+
     finally:
         driver.quit()
 
@@ -116,9 +113,16 @@ def scrape_data(pages_to_run=None):
 
 
 def save_data(data1, filename="applicant_data.json"):
-    """saves data"""
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data1, f, indent=2)
+
+
+def fetch_new_records(since=None):
+    """
+    Worker-compatible wrapper.
+    For now we ignore `since` and just run scraper.
+    """
+    return scrape_data()
 
 
 if __name__ == "__main__":

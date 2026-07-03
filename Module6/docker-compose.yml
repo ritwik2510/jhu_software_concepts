@@ -1,4 +1,3 @@
-
 services:
   db:
     image: postgres:16
@@ -17,11 +16,11 @@ services:
       retries: 10
     networks:
       - backend
-  
+
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - "15672:15672"   
+      - "15672:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
@@ -30,31 +29,38 @@ services:
     networks:
       - backend
 
-  
   web:
     build:
-      context: ./src/web       
+      context: ./src/web
     ports:
-      - "8080:8080"             
+      - "8080:8080"
     environment:
-      DATABASE_URL: postgresql://appuser:apppass@db:5432/applicants
+      DATABASE_URL: postgresql://myuser:mypassword@db:5432/mydatabase
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/%2F
+      PYTHONPATH: /app
+    volumes:
+      - ./src:/app
+    working_dir: /app/web
+    command: python run.py
     depends_on:
       db:
-        condition: service_healthy       
+        condition: service_healthy
       rabbitmq:
-        condition: service_healthy       
+        condition: service_healthy
     networks:
       - backend
 
   worker:
     build:
-      context: ./src/worker     
+      context: ./src/worker
     environment:
       DATABASE_URL: postgresql://myuser:mypassword@db:5432/mydatabase
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/%2F
+      PYTHONPATH: /app
     volumes:
-      - ./src/data:/app/data:ro   
+      - ./src:/app
+    working_dir: /app/worker
+    command: python consumer.py
     depends_on:
       db:
         condition: service_healthy
