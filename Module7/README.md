@@ -14,7 +14,7 @@ Both score 10/10.
 
 ## Part 2: EC2 deployment
 
-See `ec2/EC2_DEPLOYMENT.md` for full steps.
+See ec2/EC2_DEPLOYMENT.md for full steps.
 
 ## AWS resources
 
