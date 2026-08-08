@@ -1,0 +1,6 @@
+﻿.venv13/
+results/
+saved_model/
+__pycache__/
+*.pyc
+data/*.jsonl
