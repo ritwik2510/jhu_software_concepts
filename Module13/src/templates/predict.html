@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Will You Get In?</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<h1>Will You Get In?</h1>
+
+<p><em>This is a class project model trained on scraped, self-reported GradCafe data. It is not a real admissions decision tool and should not be relied on for any actual application decisions.</em></p>
+
+<form method="post">
+    <label for="program">Program</label><br>
+    <input type="text" id="program" name="program" placeholder="e.g. Computer Science"><br><br>
+
+    <label for="term">Term</label><br>
+    <input type="text" id="term" name="term" placeholder="e.g. Fall 2026"><br><br>
+
+    <label for="degree">Degree</label><br>
+    <input type="text" id="degree" name="degree" placeholder="e.g. PhD, Masters"><br><br>
+
+    <label for="citizenship">Citizenship</label><br>
+    <input type="text" id="citizenship" name="citizenship" placeholder="e.g. American, International"><br><br>
+
+    <label for="gpa">GPA</label><br>
+    <input type="text" id="gpa" name="gpa" placeholder="e.g. 3.8"><br><br>
+
+    <label for="gre">GRE Quant</label><br>
+    <input type="text" id="gre" name="gre" placeholder="e.g. 165"><br><br>
+
+    <label for="gre_v">GRE Verbal</label><br>
+    <input type="text" id="gre_v" name="gre_v" placeholder="e.g. 160"><br><br>
+
+    <label for="gre_aw">GRE AW</label><br>
+    <input type="text" id="gre_aw" name="gre_aw" placeholder="e.g. 4.5"><br><br>
+
+    <label for="comments">Comments</label><br>
+    <textarea id="comments" name="comments" rows="4" placeholder="Anything else about your application"></textarea><br><br>
+
+    <button type="submit">Predict</button>
+</form>
+
+{% if error %}
+<div class="question">
+    <p style="color:red;">{{ error }}</p>
+</div>
+{% endif %}
+
+{% if result %}
+<div class="question">
+    <h3>Prediction: {{ result.prediction }}</h3>
+    <p>Model score: {{ result.confidence }}</p>
+</div>
+{% endif %}
+
+</body>
+</html>
