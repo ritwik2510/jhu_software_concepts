@@ -1,46 +1,72 @@
 # Can the Price of a Diamond Be Determined Based Upon Its Features?
 
-The main question of this project is asking about whether the price of a diamond can be predicted based on it's carat weight, cut, color, and clarity.
+The main research question of this project is whether the price of a diamond can be predicted based on its carat weight, cut, color, and clarity.
 
 ## Dataset and Data Cleaning
 
 **Source:** [Kaggle Diamonds Dataset](https://www.kaggle.com/datasets/shivam2503/diamonds)
 
-The dataset was chosen because it has 53,940 diamonds with a variety of features that can be used to answer the research question.
+The dataset contains 53,940 diamonds with a variety of features that can be used to investigate the research question.
 
-The data was cleaned as such
-    -Dropped a leftover index column from the CSV export
-    -Removed 23 rows with impossible dimensions in the x y and z values
-    -Set Cut, Color and Clarity as ordered categoricals so plots can follow with this order rather than alphabetically
+The data was cleaned as follows:
 
-## Visualizations
+- Dropped a leftover index column from the CSV export.
+- Removed 23 rows with impossible dimensions in the `x`, `y`, and `z` values.
+- Set `cut`, `color`, and `clarity` as ordered categorical variables so plots follow the appropriate grading order rather than alphabetical order.
 
-### 1. Carat vs Price by Cut Quality
+## Exploratory Data Analysis
+
+The main research question is broken into three sub-questions.
+
+### Sub-question 1: How strongly is carat weight related to diamond price?
+
 ![Carat vs Price by Cut](assets/carat_vs_price_by_cut_quality.png)
 
-The price rises with the carat in a non linear fashion with there being a lot of clustering around the 1.0, 1.5 and 2.0 carat weights. The Cut quality is fairly mixed throught the price levels which shows that cut by itself does not indicate the differences in price
+The scatter plot shows a strong positive relationship between carat weight and price. Price increases nonlinearly as carat weight increases, with noticeable clustering around 1.0, 1.5, and 2.0 carats.
 
-### 2. Price Distribution by Clarity Grade
+The different cut categories are distributed throughout the price range, suggesting that cut quality alone does not explain the large differences in diamond prices.
+
+**Finding:** Carat weight appears to be the strongest visible driver of diamond price.
+
+### Sub-question 2: How does clarity relate to diamond price?
+
 ![Price by Clarity](assets/price_by_clarity.png)
 
-The median price decreases as clarity improves, which is because the lower clarity stones tend to be larger higher carat pieces. This shows that clarity and carat are tied together when trying to determine the price of the Diamond.
+The boxplot shows that price distributions vary across clarity grades. However, clarity by itself does not determine price.
 
-### 3. Interactive: Carat vs. Price, Animated by Color Grade
+One important reason is that carat weight is related to both price and the characteristics of the diamonds within each clarity group. Larger diamonds can have lower clarity grades while still commanding high prices because of their size.
+
+**Finding:** Clarity contributes to price, but it should be considered together with carat weight rather than used as an independent predictor.
+
+### Sub-question 3: Does the carat-price relationship remain consistent across color grades?
+
 [Interactive Visualization](assets/carat_price_interactive.html)
 
-Going through the color grades (J→D) shows the same non-linear carat-price relationship holds throughout, reinforcing carat as the dominant price
-driver regardless of color. But it also cannot be proven that just carat alone is enought to determine the price
+The interactive visualization allows the relationship between carat weight and price to be viewed across the color grades from J to D.
+
+Moving through the color grades shows that the nonlinear relationship between carat weight and price remains visible across the different color categories.
+
+**Finding:** Carat weight remains an important price driver across color grades, although color and the other diamond characteristics also contribute to the final price.
 
 ## Conclusion
 
-Yes, price can reasonably be estimated from a diamond's features, but no single feature is enough to determine it fully. Even though Carat is the strongest feature in terms of estimating the price, it relies on the cut, color and clarity to support it. 
+Diamond price can reasonably be estimated from its features, but no single feature is sufficient to determine price by itself.
 
-## Setup and Running the Project
-1. Create the virtual enviornment and install the dependencies
-    pip install -r requirements.txt
-2. Generate the plots
-    python visualization.py
-3. Run the dashboard
-    python dashboard.py
-    Click on the url
+Carat weight is the strongest visible driver of price in this exploratory analysis. However, cut, color, and clarity also contribute to the overall price and should be considered together.
 
+The visualizations demonstrate relationships between these variables, but they do not prove that one feature directly causes changes in price.
+
+## Project Structure
+
+```text
+Module10/
+├── assets/
+│   ├── carat_vs_price_by_cut_quality.png
+│   ├── price_by_clarity.png
+│   └── carat_price_interactive.html
+├── data/
+│   └── diamonds.csv
+├── dashboard.py
+├── visualization.py
+├── requirements.txt
+└── README.md

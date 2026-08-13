@@ -1,22 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Contact{% endblock %}
+{% block title %}Projects{% endblock %}
 
 {% block content %}
 
 <h1>Projects</h1>
 
-<h2>Module 1 Project</h2>
-
-<p>
-    Created a website that will include all projects for this course as they are completed along with including my information
-</p>
-
-<p>
-    GitHub:
-    <a href="https://github.com/ritwik2510/jhu_software_concepts">
-        Link to Github
-    </a>
-</p>
+{% for project in projects %}
+<div class="project-block">
+    <h2>{{ project.title }}</h2>
+    <p>{{ project.overview }}</p>
+    <p>
+        GitHub:
+        <a href="{{ project.github_url }}" target="_blank">
+            Link to GitHub
+        </a>
+    </p>
+    <p><em>What I learned:</em> {{ project.learned }}</p>
+</div>
+{% endfor %}
 
 {% endblock %}

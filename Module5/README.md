@@ -16,5 +16,4 @@ website is located at index.html (for example: file:///C:/Users/ritwi/Documents/
 
 Notes/Bugs and Issues
 Could only get 76% completion through pytest
-github workflow kept failing 
 Sphinx autodoc would not pull from the modules and ended up being blank for those parts

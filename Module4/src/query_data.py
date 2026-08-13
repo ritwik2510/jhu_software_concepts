@@ -1,20 +1,14 @@
-
-
+import os
 import psycopg2
 
-def main():
-    print("running query step")
+
+def get_db_url():
+    return os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@localhost/gradcafe")
 
 
-DB_CONFIG = {
-    "host": "localhost",
-    "database": "gradcafe",
-    "user": "postgres",
-    "password": "postgres"
-}
+def connect(db_url=None):
+    return psycopg2.connect(db_url or get_db_url())
 
-def connect():
-    return psycopg2.connect(**DB_CONFIG)
 
 def run_query(cur, title, query):
     print("\n" + "="*60)
@@ -27,36 +21,36 @@ def run_query(cur, title, query):
     for row in result:
         print(row)
 
-def query_data():
-    conn = connect()
+    return result
+
+
+def query_data(db_url=None):
+    conn = connect(db_url)
     cur = conn.cursor()
 
-    # 1. Fall 2026 count
     run_query(cur,
         "1. Total Fall 2026 applications",
         """
-        SELECT COUNT(*) 
-        FROM applicants 
+        SELECT COUNT(*)
+        FROM applicants
         WHERE term = 'Fall 2026';
         """
     )
 
-    # 2. % international students
     run_query(cur,
         "2. % International Students",
         """
-        SELECT 
+        SELECT
         ROUND(
             100.0 * SUM(
-            CASE 
-                WHEN LOWER(COALESCE(us_or_international,'')) LIKE '%international%' 
+            CASE
+                WHEN LOWER(COALESCE(us_or_international,'')) LIKE '%international%'
                     THEN 1 ELSE 0 END
             ) / COUNT(*), 2)
         FROM applicants;
         """
     )
 
-    # 3. Average GPA + GRE stats
     run_query(cur,
         "3. Average GPA and GRE scores",
         """
@@ -70,7 +64,6 @@ def query_data():
         """
     )
 
-    # 4. GPA of American students (Fall 2026)
     run_query(cur,
         "4. GPA of American Students (Fall 2026)",
         """
@@ -87,7 +80,6 @@ def query_data():
         """
     )
 
-    # 5. % Acceptances
     run_query(cur,
         "5. Percentage of Acceptances (Fall 2026)",
         """
@@ -96,11 +88,9 @@ def query_data():
             / COUNT(*), 2)
         FROM applicants
         WHERE term = 'Fall 2026';
-
         """
     )
 
-    # 6. GPA of accepted students
     run_query(cur,
         "6. GPA of Accepted Students",
         """
@@ -111,7 +101,6 @@ def query_data():
         """
     )
 
-    # 7. JHU MS CS applicants
     run_query(cur,
         "7. JHU MS Computer Science Applicants",
         """
@@ -127,7 +116,6 @@ def query_data():
         """
     )
 
-    # 8. PhD acceptances at top schools
     run_query(cur,
         "8. PhD Acceptances (MIT, Stanford, CMU, Georgetown)",
         """
@@ -142,11 +130,9 @@ def query_data():
         """
     )
 
-    # 9. LLM Comparision for Question 8
     run_query(cur,
         "9. LLM Comparision for Question 8",
         """
-
         SELECT
             COUNT(*) FILTER (WHERE llm_generated_program IS NOT NULL) AS llm_program_count,
             COUNT(*) FILTER (WHERE llm_generated_university IS NOT NULL) AS llm_university_count
@@ -154,11 +140,9 @@ def query_data():
         """
     )
 
-    # 10. Average GPA for each admission status
     run_query(cur,
         "10. Average GPA for each admission status",
         """
-
         SELECT
             status,
             ROUND(AVG(gpa)::numeric, 2) AS avg_gpa
@@ -169,7 +153,6 @@ def query_data():
         """
     )
 
-    # 11. Top 10 most applied programs
     run_query(cur,
             "11. Top 10 most applied programs",
             """
@@ -184,5 +167,52 @@ def query_data():
     cur.close()
     conn.close()
 
+def get_analysis_results(db_url=None):
+    conn = connect(db_url)
+    cur = conn.cursor()
+
+    def scalar(query, default=None):
+        cur.execute(query)
+        row = cur.fetchone()
+        if not row or row[0] is None:
+            return default
+        return row[0]
+
+    results = {
+        "total_fall_2026": scalar(
+            "SELECT COUNT(*) FROM applicants WHERE term = 'Fall 2026';", 0
+        ),
+        "pct_international": scalar("""
+            SELECT ROUND(
+                100.0 * SUM(
+                    CASE WHEN LOWER(COALESCE(us_or_international,'')) LIKE '%international%'
+                    THEN 1 ELSE 0 END
+                ) / NULLIF(COUNT(*), 0), 2)
+            FROM applicants;
+        """, 0),
+        "pct_accepted_fall_2026": scalar("""
+            SELECT ROUND(
+                100.0 * SUM(CASE WHEN status ILIKE '%accept%' THEN 1 ELSE 0 END)
+                / NULLIF(COUNT(*), 0), 2)
+            FROM applicants
+            WHERE term = 'Fall 2026';
+        """, 0),
+        "avg_gpa_accepted": scalar("""
+            SELECT ROUND(AVG(gpa)::numeric, 2)
+            FROM applicants
+            WHERE status ILIKE '%accept%'
+            AND term = 'Fall 2026';
+        """, None),
+    }
+
+    cur.close()
+    conn.close()
+    return results
+
+
+def main(db_url=None):
+    query_data(db_url)
+
+
 if __name__ == "__main__":
-    query_data()
+    main()

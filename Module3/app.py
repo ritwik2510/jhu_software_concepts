@@ -1,16 +1,18 @@
-
 from flask import Flask, render_template, request, redirect
 import psycopg2
 import os
+import subprocess
 
 app = Flask(__name__)
 
-conn = psycopg2.connect(
-    host="localhost",
-    database="gradcafe",
-    user="postgres",
-    password="postgres"
-)
+DB_CONFIG = {
+    "host": os.environ.get("DB_HOST", "localhost"),
+    "database": os.environ.get("DB_NAME", "gradcafe"),
+    "user": os.environ.get("DB_USER", "postgres"),
+    "password": os.environ.get("DB_PASSWORD", "postgres")
+}
+
+conn = psycopg2.connect(**DB_CONFIG)
 
 scraping_running = False
 
@@ -47,8 +49,7 @@ def index():
             ROUND(AVG(gre)::numeric, 2),
             ROUND(AVG(gre_v)::numeric, 2),
             ROUND(AVG(gre_aw)::numeric, 2)
-        FROM applicants
-        WHERE gpa IS NOT NULL;
+        FROM applicants;
     """)
 
     q4 = fetch("""
@@ -56,12 +57,7 @@ def index():
         FROM applicants
         WHERE term = 'Fall 2026'
         AND gpa IS NOT NULL
-        AND (
-            LOWER(us_or_international) LIKE '%american%'
-            OR LOWER(us_or_international) LIKE '%us%'
-            OR LOWER(us_or_international) LIKE '%domestic%'
-            OR LOWER(us_or_international) LIKE '%usa%'
-        );
+        AND us_or_international = 'American';
     """)
 
     q5 = fetch("""
@@ -83,13 +79,9 @@ def index():
     q7 = fetch("""
         SELECT COUNT(*)
         FROM applicants
-        WHERE LOWER(llm_generated_university) LIKE '%johns hopkins%'
-        AND LOWER(llm_generated_program) LIKE '%computer%'
-        AND (
-            llm_generated_program ILIKE '%MS%'
-            OR llm_generated_program ILIKE '%M.S%'
-            OR llm_generated_program ILIKE '%Masters%'
-        );
+        WHERE llm_generated_university ILIKE '%Johns Hopkins%'
+        AND llm_generated_program ILIKE '%Computer Science%'
+        AND degree = 'Masters';
     """)
 
     q8 = fetch("""
@@ -97,19 +89,24 @@ def index():
         FROM applicants
         WHERE status ILIKE '%accept%'
         AND term='Fall 2026'
+        AND degree = 'PhD'
         AND (
-            llm_generated_program ILIKE '%PhD%'
-            OR program ILIKE '%PhD%'
+            llm_generated_university ILIKE '%Georgetown%'
+            OR llm_generated_university ILIKE '%MIT%'
+            OR llm_generated_university ILIKE '%Massachusetts Institute of Technology%'
+            OR llm_generated_university ILIKE '%Stanford%'
+            OR llm_generated_university ILIKE '%Carnegie Mellon%'
+            OR llm_generated_university ILIKE '%CMU%'
         );
     """)
 
     q9 = fetch("""
         SELECT
             COUNT(*) FILTER (
-                WHERE llm_generated_program IS NOT NULL
+                WHERE university IS DISTINCT FROM llm_generated_university
             ),
             COUNT(*) FILTER (
-                WHERE llm_generated_university IS NOT NULL
+                WHERE program IS DISTINCT FROM llm_generated_program
             )
         FROM applicants;
     """)
@@ -155,23 +152,28 @@ def index():
         q10=q10,
         q11=q11
     )
+
+
 @app.route("/pull", methods=["POST"])
 def pull():
-    os.system("python load_data.py")
+    global scraping_running
+
+    if scraping_running:
+        return "A scrape is already in progress. Please wait for it to finish before starting another."
+
+    scraping_running = True
+    try:
+        subprocess.run(["python", "scrape.py"], check=True)
+        subprocess.run(["python", "clean.py"], check=True)
+        subprocess.run(["python", "load_data.py"], check=True)
+    finally:
+        scraping_running = False
+
     return redirect("/")
 
 
 @app.route("/update", methods=["POST"])
 def update():
-    global scraping_running
-
-    if scraping_running:
-        return "Scraping already running..."
-
-    scraping_running = True
-    os.system("python query_data.py")
-    scraping_running = False
-
     return redirect("/")
 
 

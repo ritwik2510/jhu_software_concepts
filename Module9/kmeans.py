@@ -45,7 +45,11 @@ def save_cluster_preview(df, filename):
 
 def run_analysis():
     """Main execution function for clustering."""
-    df = pd.read_json('cleaned_gradcafe.json')
+    df = pd.read_json('llm_extend_applicant_data_run.jsonl', lines=True)
+    df = df.rename(columns={
+    'llm-generated-program': 'Program',
+    'llm-generated-university': 'University'
+    })
     df = df.dropna(subset=['Program'])
 
     print(f"Number of Entries: {len(df):,}")

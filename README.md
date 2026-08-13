@@ -1,104 +1,68 @@
-# jhu_software_concepts
+# JHU Software Concepts - Final Portfolio
 
----
+Course: Modern Software Concepts in Python
+Name: Ritwik Salunke
 
-## Environment Variables
+## Repository Overview
 
-Copy `.env.example` to `.env` and fill in your values. Never commit `.env`.
+This repository contains my complete body of work for Modern Software Concepts in Python, covering web scraping, data cleaning, SQL and PostgreSQL, Flask web development, automated testing, documentation, software assurance, cloud deployment with AWS, data dashboards, MLOps with MLflow, neural networks built from scratch, and fine-tuning/deploying a HuggingFace transformer model.
 
-| Variable | Description | Default |
-|---|---|---|
-| `DB_HOST` | PostgreSQL host | `localhost` |
-| `DB_PORT` | PostgreSQL port | `5432` |
-| `DB_NAME` | Database name | `gradcafe` |
-| `DB_USER` | DB user | `postgres` |
-| `DB_PASSWORD` | DB password | — |
-| `DATABASE_URL` | Optional full DSN | — |
+The repo is organized by module, with each module in its own folder (Module1 through Module13) containing that assignment's code, README, and any supporting files. Shared/global files (this README, requirements.txt) live at the root and apply across the whole repo. My personal website's Projects page (in Module1) pulls project summaries from a JSON file to present all 13 modules as a portfolio.
 
----
+## Grader Corrections Log
 
-## Fresh Install — pip + venv
+### Module 1 – Personal Website
+Grader Comment: Projects nav link didn't highlight due to a mismatch between active="projects" in routes.py and active == 'project' in base.html; no .gitignore present; missing code comments.
+Revision Made: Fixed the active-state check in base.html to match the value passed from routes.py, added a root-level .gitignore to exclude __pycache__ and other generated files, and added comments throughout routes.py.
 
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-pip install -e .
-copy .env.example .env
-flask --app src.app run
-```
+### Module 2 – GradCafe Scraper and Data Cleaning
+Grader Comment: Only 200 entries scraped; failed to extract comments, semester, GRE, GRE AW, and GPA fields; no standardized program/university fields; missing canonical-list documentation; README lacked reproducible setup steps; code missing comments; helper functions not prefixed with underscore.
+Revision Made: Rewrote the scraper to parse GPA, GRE, GRE V, GRE AW, term, origin, and comments directly from the results listing page instead of a broken separate detail-page fetch, and scraped roughly 3,000 entries. Rewrote the cleaning script to parse these new fields into proper numeric/categorical values and added rule-based standardization for university and program names (stripping parentheticals, degree-type suffixes, and "online" modifiers) instead of just copying the raw values. Renamed internal helper functions with a leading underscore, and rewrote the README with explicit setup/run steps and documentation of the standardization approach and its limitations.
 
----
+### Module 3 – PostgreSQL Data Loading, SQL Analysis, and Flask Dashboard
+Grader Comment: No CREATE TABLE statement or degree column; no duplicate handling and a transaction bug that discarded good rows on any row error; hardcoded DB credentials; Q3/Q4/Q7/Q8/Q9 had logic bugs (overly restrictive filters, broad pattern matching, wrong comparison logic); minimal CSS that didn't match template classes; "Pull New Data" button ran the loader instead of the scraper and never set the busy flag; written reflection didn't reference actual computed values.
+Revision Made: Added a proper schema with a degree column and a UNIQUE constraint on url, fixed the loader to commit per-row and use ON CONFLICT DO NOTHING for dedup, and moved credentials to environment variables. Rewrote the buggy queries (dropped an overly restrictive WHERE clause on Q3, replaced broad LIKE patterns with exact/standardized-field matching on Q4 and Q7, added degree and university filtering to Q8, and rewrote Q9 to genuinely compare raw vs. LLM-standardized values instead of just counting non-nulls). Rewrote the CSS to match the actual template's class names with real card, table, and button styling, and added explanatory text above each button. Fixed the Pull New Data button to run the actual scraper/cleaner/loader pipeline and correctly set/reset the busy flag. Rewrote the written reflection using the project's own computed statistics (19,707 Fall 2026 applications, 38.65% acceptance rate, GPA averages by status) and explicitly named selection bias, missingness, representativeness, and reliability as limitations, including a note on a GRE scoring-scale inconsistency discovered in the data. 
 
-## Fresh Install — uv
+### Module 4 – [title]
+Grader Comment: 
+Revision Made: 
 
-```powershell
-pip install uv
-uv venv
-.venv\Scripts\activate
-uv pip sync requirements.txt
-uv pip install -e .
-copy .env.example .env
-flask --app src.app run
-```
+### Module 5 – [title]
+Grader Comment: 
+Revision Made: 
 
----
+### Module 6 – [title]
+Grader Comment: No comments provided    
+Revision Made: N/A
 
-## Running Pylint
+### Module 7 – [Cloud Computing Assignment]
+Grader Comment: creds (mypassword, guest/guest) hardcoded inline rather than .env (-1)
+Revision Made: Created a .env file that the docker-compose.yml refernced and the .env file was gitignored.
 
-```powershell
-.venv\Scripts\python.exe -m pylint src/ --fail-under=10
-```
+### Module 8 – AWS SageMaker / Data Analysis
+Grader Comment: Notebook depended on a missing local repair step and had one unexecuted cell; operated on a 5,000-row subset instead of the full dataset; GRE column had no usable values, GPA and GRE AW included zero values treated as valid scores, GRE AW included impossible values above 6, and days_to_decision contained negative/unrealistic values; downstream statistics, visualizations, and analytics.pdf were undermined by this bad data, with analytics.pdf specifically containing placeholder text and a nan result.
+Revision Made: Switched the notebook to load the full 36,000-row course-provided dataset directly (mapping its column names to match the notebook's existing pipeline), removing the dependency on a separate repair step. Rewrote the numeric cleaning logic to treat 0 as missing rather than a real score for GPA and GRE AW, bound GRE AW to its real 0.5-6.0 range, and fixed the GRE range check to accept either the modern single-section scale (130-170) or the older combined scale (260-340) instead of silently discarding one of them, which had been the root cause of "no usable GRE values." Fixed days_to_decision to exclude negative and unrealistic (>365 day) values. Converted analytics.pdf's static placeholder markdown into a code cell that computes and writes real statistics using reportlab, eliminating the nan result and placeholder language. Added automatic PNG generation for all table screenshots and confirmed both required CSVs save correctly, so no manual screenshotting is needed.
 
-Required score: 10.00/10 on all files under `src/`.
+### Module 9 – [title]
+Grader Comment: Missing requirements.txt; final labeled DataFrame was not saved as a downstream deliverable; cluster visualizations did not show cluster centers or provide a meaningful cluster legend; the Computer Science and Philosophy box plots relied on the malformed GRE column and lacked the required written interpretation of whether the score distributions were realistic or needed further cleaning; README was brief and did not include sufficient results, conclusions, or interpretation.
+Revision Made: Added a requirements.txt containing the required Python dependencies. Updated the K-Means workflow to explicitly save the final 85-cluster assignments in a final_cluster column and export the complete labeled dataset to clustered_data.csv. Improved the clustering visualization by displaying cluster centers and providing a meaningful cluster legend. Updated the Computer Science and Philosophy analysis to use the available GRE V data rather than relying on the unusable GRE column, while explicitly documenting the limitations of the GRE-related data. Expanded the README to explain the TF-IDF, PCA, initial and final K-Means methodology, elbow analysis, cluster-selection process, Computer Science and Philosophy results, GRE V interpretation, data-quality limitations, reproducibility instructions, and overall conclusions. The README now also documents that the GRE distributions should be treated as exploratory because additional numeric data cleaning is necessary before drawing strong conclusions.
 
----
+### Module 10 – [Diamond Price Data Visualization and Dash Dashboard]
+Grader Comment: Generated visualization files were duplicated/misplaced at the Module 10 root while the dashboard referenced the assets folder; the EDA presented visualizations without explicitly framing and answering the sub-questions in sequence; the scatter plot was overly dense; README wording contained grammar and typo issues; visualization.py was not function-based despite the rubric preference; and there were naming/placement inconsistencies that reduced professional polish.
+Revision Made: Moved all generated visualizations into the assets directory and updated the visualization script and dashboard to consistently use those paths. Refactored visualization.py into separate functions for data loading/cleaning and each visualization, while reducing scatter-plot density for better readability. Rewrote the README to explicitly state three sub-questions and provide a finding for each one, clarified the interpretation of carat, cut, color, and clarity, corrected grammar and spelling issues, documented the final project structure and setup instructions, and added a clear conclusion explaining that carat is the strongest visible price driver but that no single feature determines diamond price.
 
-## Running Tests
+### Module 11 – [MLOps Pipeline Assignment]
+Grader Comment: Extra artifacts that are unrelated to required deliverables (e.g., elbow.png, initial_cluster.png, computer_science.png, philosophy.png, clustered_dataFrame.png, etc.) (-1 pt.)
+Revision Made: Removed extra artifacts from Module11 folder
 
-```powershell
-.venv\Scripts\python.exe -m pytest tests/ -v
-```
+### Module 12 – [Two-Layer Neural Network Assignmenttitle]
+Grader Comment: No revisions
+Revision Made: N/A
 
----
+### Module 13 – Neural Networks / Fine-tuning
+Grader Comment: Canvas submission did not match GitHub (missing src package and saved_model folder); no written justification for tokenizer choice; thin evaluation interpretation that didn't discuss class bias, comparison to random guessing, or sustained comparison to the Module 12 network; write-up missing preprocessing decisions, exact model input template, training configuration, and formal evaluation metrics summary.
+Revision Made: Confirmed the local repository structure already matched the README (the mismatch was a Canvas packaging issue, not a project error) and will ensure the next submission zip includes saved_model/ in full. Added a tokenizer justification section explaining the choice to use DistilBERT's own WordPiece tokenizer. Reconstructed the exact test split (fixed random_state=42) and reran evaluation on the saved model to produce real precision/recall/F1 per class, then added a Model Bias and Performance Interpretation section discussing the model's asymmetric recall (85% Rejected vs. 71% Accepted) and its comparison to both the random-guessing and majority-class baselines. Added a Preprocessing and Input Template section documenting the exact text template used, and a formal Evaluation Summary with test set size and all metrics.
 
-## Generating the Dependency Graph
+## Final Reflection
 
-Install Graphviz from https://graphviz.org/download/ and check "Add to PATH" during install. Then:
-
-```powershell
-python -m pydeps src/app.py --noshow -T svg -o dependency.svg
-```
-
----
-
-## Snyk Security Scan
-
-```powershell
-snyk auth
-snyk test
-```
-
----
-
-## Least-Privilege Database Setup
-
-```sql
-CREATE USER gradcafe_app WITH PASSWORD 'your_password';
-GRANT CONNECT ON DATABASE gradcafe TO gradcafe_app;
-GRANT USAGE ON SCHEMA public TO gradcafe_app;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO gradcafe_app;
-```
-
-Set `DB_USER=gradcafe_app` and `DB_PASSWORD=your_password` in your `.env`.
-
----
-
-## GitHub Actions CI
-
-The workflow in `.github/workflows/ci.yml` runs on every push and pull request with four jobs:
-
-1. **Pylint** — fails if score is below 10.00/10
-2. **Dependency graph** — generates and validates `dependency.svg`
-3. **Snyk** — scans `requirements.txt` for vulnerabilities
-4. **Pytest** — runs the full test suite and fails on any failure
+[most challenging module, strongest work, skills improved, how your understanding of Python changed]

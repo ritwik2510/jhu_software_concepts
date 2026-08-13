@@ -1,25 +1,30 @@
-
 import json
-import psycopg2 
+import os
+import psycopg2
 
 DB_CONFIG = {
-    "host": "localhost",
-    "dbname": "gradcafe",
-    "user": "postgres",
-    "password": "postgres"
+    "host": os.environ.get("DB_HOST", "localhost"),
+    "dbname": os.environ.get("DB_NAME", "gradcafe"),
+    "user": os.environ.get("DB_USER", "postgres"),
+    "password": os.environ.get("DB_PASSWORD", "postgres")
 }
+
 
 def connect():
     return psycopg2.connect(**DB_CONFIG)
 
+
 def load_data():
     conn = connect()
-    cur = conn.cursor() 
+    cur = conn.cursor()
 
     with open("llm_extend_applicant_data.json", "r", encoding="utf-8") as f:
         data = json.load(f)
 
     print(f"Total records found: {len(data)}")
+
+    inserted = 0
+    skipped = 0
 
     for i, row in enumerate(data):
         if not row.get("program"):
@@ -28,6 +33,8 @@ def load_data():
         try:
             cur.execute("""
                     INSERT INTO applicants (
+                        degree,
+                        university,
                         program,
                         comments,
                         date_added,
@@ -42,11 +49,14 @@ def load_data():
                         llm_generated_program,
                         llm_generated_university
                     )
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    ON CONFLICT (url) DO NOTHING
                 """, (
+                    row.get("degree"),
+                    row.get("university"),
                     row.get("program"),
                     row.get("comments"),
-                    row.get("date_added"),
+                    row.get("added_on"),
                     row.get("url"),
                     row.get("status"),
                     row.get("term"),
@@ -57,22 +67,28 @@ def load_data():
                     row.get("gre_aw"),
                     row.get("llm_generated_program"),
                     row.get("llm_generated_university")
-                )) 
-            
+                ))
+
+            conn.commit()
+
+            if cur.rowcount == 0:
+                skipped += 1
+            else:
+                inserted += 1
+
         except Exception as e:
             conn.rollback()
             print("Error on row", i, ":", e)
             continue
 
         if i > 0 and i % 500 == 0:
-            conn.commit()
-            print(f"Inserted {i} rows...")
-        
-    conn.commit()
+            print(f"Processed {i} rows...")
+
     cur.close()
     conn.close()
 
-    print("DONE LOADING DATA INTO POSTGRES")
+    print(f"DONE LOADING DATA INTO POSTGRES - inserted {inserted}, skipped {skipped} duplicates")
+
 
 if __name__ == "__main__":
     load_data()

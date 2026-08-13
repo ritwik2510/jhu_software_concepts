@@ -49,15 +49,15 @@
 </div>
 
 <div class="question">
-    <h3>8. How many Fall 2026 applicants were accepted into Computer Science PhD programs?</h3>
+    <h3>8. How many Fall 2026 applicants were accepted into PhD programs at MIT, Stanford, CMU, or Georgetown?</h3>
     <p>{{ q8 }}</p>
 </div>
 
 <div class="question">
-    <h3>9. How many records were enriched using the LLM?</h3>
+    <h3>9. How many records were changed by LLM standardization?</h3>
     <p>
-        Programs identified: {{ q9_programs }}<br>
-        Universities identified: {{ q9_universities }}
+        Universities changed: {{ q9_universities }}<br>
+        Programs changed: {{ q9_programs }}
     </p>
 </div>
 
@@ -93,13 +93,17 @@
     </table>
 </div>
 
-<form action="/pull" method="post">
-    <button type="submit">Pull New Data</button>
-</form>
+<div class="question">
+    <p>Pulling new data scrapes the latest results from TheGradCafe, cleans them, and loads them into the database. This can take several minutes.</p>
+    <form action="/pull" method="post">
+        <button type="submit">Pull New Data</button>
+    </form>
 
-<form action="/update" method="post">
-    <button type="submit">Update Analysis</button>
-</form>
+    <p>Updating analysis refreshes the statistics above with the latest data already in the database.</p>
+    <form action="/update" method="post">
+        <button type="submit">Update Analysis</button>
+    </form>
+</div>
 
 </body>
 </html>

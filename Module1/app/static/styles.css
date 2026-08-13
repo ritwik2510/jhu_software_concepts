@@ -48,3 +48,22 @@ nav a:hover {
 .image {
     width: 35%;
 }
+
+.project-block {
+    background: white;
+    padding: 20px 24px;
+    margin: 16px 0;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    max-width: 750px;
+}
+
+.project-block h2 {
+    color: cornflowerblue;
+    margin-top: 0;
+    font-size: 1.2em;
+}
+
+.project-block a {
+    color: cornflowerblue;
+}

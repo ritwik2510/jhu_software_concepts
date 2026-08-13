@@ -21,7 +21,7 @@
 <div class="question">
     <h3>3. What are the average GPA and GRE scores?</h3>
     <p>
-        Answer: 
+        Answer:
         GPA: {{ q3_gpa }}<br>
         GRE: {{ q3_gre }}<br>
         GRE Verbal: {{ q3_grev }}<br>
@@ -57,7 +57,7 @@
 <div class="question">
     <h3>9. How many records were enriched using the LLM?</h3>
     <p>
-        Answer: 
+        Answer:
         Programs identified: {{ q9_programs }}<br>
         Universities identified: {{ q9_universities }}
     </p>
@@ -95,7 +95,7 @@
     </table>
 </div>
 
-<form action="/pull" method="post">
+<form action="/pull-data" method="post">
     <button
     type="submit"
     data-testid="pull-data-btn">
@@ -103,7 +103,7 @@
 </button>
 </form>
 
-<form action="/update" method="post">
+<form action="/update-analysis" method="post">
     <button
     type="submit"
     data-testid="update-analysis-btn">

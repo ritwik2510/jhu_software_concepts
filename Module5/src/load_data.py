@@ -75,7 +75,7 @@ def load_data():
                     ),
                 )
 
-            except Exception as e:  # pylint: disable=broad-exception-caught
+            except psycopg2.Error as e:
                 conn.rollback()
                 print("Error on row", i, ":", e)
                 continue
@@ -86,7 +86,7 @@ def load_data():
 
         conn.commit()
 
-    except Exception as e:  # pylint: disable=broad-exception-caught
+    except (OSError, json.JSONDecodeError, psycopg2.Error) as e:
         print("Failed to load data:", e)
 
     finally:

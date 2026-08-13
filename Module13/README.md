@@ -40,6 +40,17 @@ Visit `http://127.0.0.1:5000/predict` for the "Will You Get In?" prediction page
 - Test accuracy: 79.1 percent
 - Test F1 score: 0.753
 
+
+Tokenizer Choice
+
+DistilBERT's own WordPiece tokenizer (distilbert-base-uncased) was used rather than a
+custom tokenizer, since fine-tuning requires the input tokenization to exactly match
+what the pretrained weights were trained on. Building a custom tokenizer would have
+broken the alignment between input tokens and the pretrained embeddings, discarding
+the main benefit of using a pretrained model in the first place. A max sequence length
+of 256 was chosen as long enough to hold the university/program/GPA/GRE fields plus a
+meaningful chunk of the comments field, without excessive padding on shorter entries.
+
 ## Project Structure
 
 - `train_model.py`: loads data, builds the unified text template, splits train/test, fine-tunes the model, evaluates it, and saves it

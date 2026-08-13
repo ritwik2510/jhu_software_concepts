@@ -1,27 +1,27 @@
-
 import json
-import psycopg2 
+import os
+import psycopg2
 
-DB_CONFIG = {
-    "host": "localhost",
-    "dbname": "gradcafe",
-    "user": "postgres",
-    "password": "postgres"
-}
 
-def main():
-    print("loading data into DB")
-    
-def connect():
-    return psycopg2.connect(**DB_CONFIG)
+def get_db_url():
+    return os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@localhost/gradcafe")
 
-def load_data():
-    conn = connect()
+
+def connect(db_url=None):
+    return psycopg2.connect(db_url or get_db_url())
+
+
+def load_data(db_url=None, filename="llm_extend_applicant_data.json", data=None):
+    conn = connect(db_url)
     cur = conn.cursor()
 
+    inserted = 0
+    skipped = 0
+
     try:
-        with open("llm_extend_applicant_data.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
+        if data is None:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
 
         print(f"Total records found: {len(data)}")
 
@@ -47,6 +47,7 @@ def load_data():
                         llm_generated_university
                     )
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    ON CONFLICT (url) DO NOTHING
                 """, (
                     row.get("program"),
                     row.get("comments"),
@@ -63,18 +64,21 @@ def load_data():
                     row.get("llm_generated_university")
                 ))
 
-            except Exception as e:
+                conn.commit()
+
+                if cur.rowcount == 0:
+                    skipped += 1
+                else:
+                    inserted += 1
+
+            except psycopg2.Error as e:
                 conn.rollback()
                 print("Error on row", i, ":", e)
                 continue
 
-            if i > 0 and i % 500 == 0:
-                conn.commit()
-                print(f"Inserted {i} rows...")
+        print(f"Inserted {inserted}, skipped {skipped} duplicates")
 
-        conn.commit()
-
-    except Exception as e:
+    except (OSError, json.JSONDecodeError, psycopg2.Error) as e:
         print("Failed to load data:", e)
 
     finally:
@@ -82,6 +86,12 @@ def load_data():
         conn.close()
 
     print("DONE LOADING DATA INTO POSTGRES")
+    return {"inserted": inserted, "skipped": skipped}
+
+
+def main(db_url=None):
+    load_data(db_url)
+
 
 if __name__ == "__main__":
-    load_data()
+    main()

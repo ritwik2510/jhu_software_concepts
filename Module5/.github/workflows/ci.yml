@@ -50,13 +50,16 @@ jobs:
           pip install -r Module5/requirements.txt
           pip install pydeps
 
-      - name: Generate dependency graph (NO GUI OPEN)
+      - name: Generate dependency graph
         run: |
-          pydeps Module5/src/app.py -T svg -o Module5/dependency.svg --noshow
+          pydeps Module5/src/app.py \
+            -T svg \
+            -o Module5/dependency.svg \
+            --noshow
 
       - name: Verify dependency graph exists
         run: |
-          test -f Module5/dependency.svg || (echo "dependency.svg missing" && exit 1)
+          test -f Module5/dependency.svg
 
       - uses: actions/upload-artifact@v4
         with:
@@ -80,14 +83,16 @@ jobs:
           node-version: "18"
 
       - name: Install Snyk
-        run: npm install -g snyk
+        run: |
+          npm install -g snyk
 
       - name: Install dependencies
-        run: pip install -r Module5/requirements.txt
-
-      - name: Run Snyk test (non-blocking if no token)
         run: |
-          snyk test --file=Module5/requirements.txt || true
+          pip install -r Module5/requirements.txt
+
+      - name: Run Snyk test
+        run: |
+          snyk test --file=Module5/requirements.txt
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -106,13 +111,18 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres"
+          --health-cmd="pg_isready -U postgres -d gradcafe"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gradcafe
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: gradcafe
+      DB_USER: gradcafe_app
+      DB_PASSWORD: gradcafe_test_password
+      DATABASE_URL: postgresql://gradcafe_app:gradcafe_test_password@localhost:5432/gradcafe
 
     steps:
       - uses: actions/checkout@v4
@@ -124,11 +134,30 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r Module5/requirements.txt
-          pip install pytest
+          pip install pytest pytest-cov
 
-      - name: Create DB schema
+      - name: Create application database user
+        env:
+          PGPASSWORD: postgres
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d gradcafe -c "
+          psql -h localhost -U postgres -d gradcafe <<'SQL'
+          DO $$
+          BEGIN
+              IF NOT EXISTS (
+                  SELECT FROM pg_catalog.pg_roles
+                  WHERE rolname = 'gradcafe_app'
+              ) THEN
+                  CREATE ROLE gradcafe_app LOGIN PASSWORD 'gradcafe_test_password';
+              END IF;
+          END
+          $$;
+          SQL
+
+      - name: Create database schema
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d gradcafe <<'SQL'
           CREATE TABLE IF NOT EXISTS applicants (
               id SERIAL PRIMARY KEY,
               program TEXT,
@@ -145,7 +174,41 @@ jobs:
               llm_generated_program TEXT,
               llm_generated_university TEXT
           );
-          "
 
-      - name: Run tests
-        run: pytest Module5/tests -v
+          GRANT CONNECT ON DATABASE gradcafe TO gradcafe_app;
+
+          GRANT USAGE ON SCHEMA public TO gradcafe_app;
+
+          GRANT SELECT, INSERT, UPDATE, DELETE
+          ON TABLE applicants TO gradcafe_app;
+
+          GRANT USAGE, SELECT
+          ON SEQUENCE applicants_id_seq TO gradcafe_app;
+          SQL
+
+      - name: Verify application database access
+        env:
+          PGPASSWORD: gradcafe_test_password
+        run: |
+          psql \
+            -h localhost \
+            -U gradcafe_app \
+            -d gradcafe \
+            -c "SELECT COUNT(*) FROM applicants;"
+
+      - name: Run tests with coverage
+        run: |
+          pytest Module5/tests -v \
+            | tee Module5/coverage_summary.txt
+
+      - name: Upload coverage summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-summary
+          path: Module5/coverage_summary.txt
+
+      - name: Upload HTML coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-coverage
+          path: Module5/htmlcov

@@ -1,5 +1,3 @@
-
-
 import psycopg2
 
 DB_CONFIG = {
@@ -9,8 +7,10 @@ DB_CONFIG = {
     "password": "postgres"
 }
 
+
 def connect():
     return psycopg2.connect(**DB_CONFIG)
+
 
 def run_query(cur, title, query):
     print("\n" + "="*60)
@@ -23,6 +23,7 @@ def run_query(cur, title, query):
     for row in result:
         print(row)
 
+
 def main():
     conn = connect()
     cur = conn.cursor()
@@ -31,8 +32,8 @@ def main():
     run_query(cur,
         "1. Total Fall 2026 applications",
         """
-        SELECT COUNT(*) 
-        FROM applicants 
+        SELECT COUNT(*)
+        FROM applicants
         WHERE term = 'Fall 2026';
         """
     )
@@ -41,11 +42,11 @@ def main():
     run_query(cur,
         "2. % International Students",
         """
-        SELECT 
+        SELECT
         ROUND(
             100.0 * SUM(
-            CASE 
-                WHEN LOWER(COALESCE(us_or_international,'')) LIKE '%international%' 
+            CASE
+                WHEN LOWER(COALESCE(us_or_international,'')) LIKE '%international%'
                     THEN 1 ELSE 0 END
             ) / COUNT(*), 2)
         FROM applicants;
@@ -57,12 +58,11 @@ def main():
         "3. Average GPA and GRE scores",
         """
         SELECT
-            ROUND(AVG(gpa)::numeric, 2),
-            ROUND(AVG(gre)::numeric, 2),
-            ROUND(AVG(gre_v)::numeric, 2),
-            ROUND(AVG(gre_aw)::numeric, 2)
-        FROM applicants
-        WHERE gpa IS NOT NULL;
+            ROUND(AVG(gpa)::numeric, 2) AS avg_gpa,
+            ROUND(AVG(gre) FILTER (WHERE gre BETWEEN 130 AND 340)::numeric, 2) AS avg_gre,
+            ROUND(AVG(gre_v)::numeric, 2) AS avg_gre_v,
+            ROUND(AVG(gre_aw)::numeric, 2) AS avg_gre_aw
+        FROM applicants;
         """
     )
 
@@ -74,12 +74,7 @@ def main():
         FROM applicants
         WHERE term = 'Fall 2026'
         AND gpa IS NOT NULL
-        AND (
-            LOWER(us_or_international) LIKE '%american%'
-            OR LOWER(us_or_international) LIKE '%us%'
-            OR LOWER(us_or_international) LIKE '%domestic%'
-            OR LOWER(us_or_international) LIKE '%usa%'
-        );
+        AND us_or_international = 'American';
         """
     )
 
@@ -92,7 +87,6 @@ def main():
             / COUNT(*), 2)
         FROM applicants
         WHERE term = 'Fall 2026';
-
         """
     )
 
@@ -113,13 +107,9 @@ def main():
         """
         SELECT COUNT(*)
         FROM applicants
-        WHERE LOWER(llm_generated_university) LIKE '%johns hopkins%'
-        AND LOWER(llm_generated_program) LIKE '%computer%'
-        AND (
-            llm_generated_program ILIKE '%MS%'
-            OR llm_generated_program ILIKE '%M.S%'
-            OR llm_generated_program ILIKE '%Masters%'
-        );
+        WHERE llm_generated_university ILIKE '%Johns Hopkins%'
+        AND llm_generated_program ILIKE '%Computer Science%'
+        AND degree = 'Masters';
         """
     )
 
@@ -131,22 +121,31 @@ def main():
         FROM applicants
         WHERE status ILIKE '%accept%'
         AND term = 'Fall 2026'
+        AND degree = 'PhD'
         AND (
-                llm_generated_program ILIKE '%PhD%'
-                OR program ILIKE '%PhD%'
-            );
+            llm_generated_university ILIKE '%Georgetown%'
+            OR llm_generated_university ILIKE '%MIT%'
+            OR llm_generated_university ILIKE '%Massachusetts Institute of Technology%'
+            OR llm_generated_university ILIKE '%Stanford%'
+            OR llm_generated_university ILIKE '%Carnegie Mellon%'
+            OR llm_generated_university ILIKE '%CMU%'
+        );
         """
     )
 
-    # 9. LLM Comparision for Question 8
+    # 9. LLM Comparison for Question 8
     run_query(cur,
-        "9. LLM Comparision for Question 8",
+        "9. LLM Comparison for Question 8",
         """
-
         SELECT
-            COUNT(*) FILTER (WHERE llm_generated_program IS NOT NULL) AS llm_program_count,
-            COUNT(*) FILTER (WHERE llm_generated_university IS NOT NULL) AS llm_university_count
-            FROM applicants;
+            COUNT(*) FILTER (
+                WHERE university IS DISTINCT FROM llm_generated_university
+            ) AS university_changed_by_standardization,
+            COUNT(*) FILTER (
+                WHERE program IS DISTINCT FROM llm_generated_program
+            ) AS program_changed_by_standardization,
+            COUNT(*) AS total_rows
+        FROM applicants;
         """
     )
 
@@ -154,7 +153,6 @@ def main():
     run_query(cur,
         "10. Average GPA for each admission status",
         """
-
         SELECT
             status,
             ROUND(AVG(gpa)::numeric, 2) AS avg_gpa
@@ -167,18 +165,19 @@ def main():
 
     # 11. Top 10 most applied programs
     run_query(cur,
-            "11. Top 10 most applied programs",
-            """
-            SELECT program, COUNT(*) AS total
-            FROM applicants
-            GROUP BY program
-            ORDER BY total DESC
-            LIMIT 10;
-            """
+        "11. Top 10 most applied programs",
+        """
+        SELECT program, COUNT(*) AS total
+        FROM applicants
+        GROUP BY program
+        ORDER BY total DESC
+        LIMIT 10;
+        """
     )
 
     cur.close()
     conn.close()
+
 
 if __name__ == "__main__":
     main()

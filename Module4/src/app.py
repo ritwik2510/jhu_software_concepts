@@ -1,16 +1,16 @@
-
-from flask import Flask, render_template, request, redirect, jsonify, current_app
+from flask import Flask, render_template, jsonify, current_app
 import psycopg2
 import os
 from src import clean, scrape, query_data, load_data
 
 scraping_running = False
 
+
 def get_connection():
     try:
         db_url = current_app.config.get("DATABASE_URL")
     except RuntimeError:
-        db_url= None
+        db_url = None
 
     if not db_url:
         db_url = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@localhost/gradcafe")
@@ -20,11 +20,12 @@ def get_connection():
     except Exception:
         return None
 
+
 def fetch(query):
 
     conn = get_connection()
     if conn is None:
-        return [(0,0,0,0)]
+        return [(0, 0, 0, 0)]
 
     cur = conn.cursor()
 
@@ -37,13 +38,15 @@ def fetch(query):
 
     return data
 
+
 def create_app(test_config=None):
 
     app = Flask(__name__)
 
+    app.state = {"scraping_running": False}
+
     if test_config:
         app.config.update(test_config)
-
 
     @app.route("/analysis")
     def analysis():
@@ -52,14 +55,17 @@ def create_app(test_config=None):
             result = fetch(query)
             if not result or not result[0] or result[0][0] is None:
                 return default
-            return result[0]
+            row = result[0]
+            if len(row) == 1:
+                return row[0]
+            return row
 
         # --- Queries ---
         q1 = safe_get("""
             SELECT COUNT(*)
             FROM applicants
             WHERE term='Fall 2026';
-        """, (0,))
+        """, 0)
 
         q2 = safe_get("""
             SELECT ROUND(
@@ -70,7 +76,7 @@ def create_app(test_config=None):
                     END
                 ) / NULLIF(COUNT(*), 0), 2)
             FROM applicants;
-        """, (0,))
+        """, 0)
 
         q3 = safe_get("""
             SELECT
@@ -93,7 +99,7 @@ def create_app(test_config=None):
                 OR LOWER(us_or_international) LIKE '%domestic%'
                 OR LOWER(us_or_international) LIKE '%usa%'
             );
-        """, (None,))
+        """, None)
 
         q5 = safe_get("""
             SELECT ROUND(
@@ -102,14 +108,14 @@ def create_app(test_config=None):
                 ) / NULLIF(COUNT(*), 0), 2)
             FROM applicants
             WHERE term='Fall 2026';
-        """, (0,))
+        """, 0)
 
         q6 = safe_get("""
             SELECT ROUND(AVG(gpa)::numeric, 2)
             FROM applicants
             WHERE status ILIKE '%accept%'
             AND term='Fall 2026';
-        """, (None,))
+        """, None)
 
         q7 = safe_get("""
             SELECT COUNT(*)
@@ -121,7 +127,7 @@ def create_app(test_config=None):
                 OR llm_generated_program ILIKE '%M.S%'
                 OR llm_generated_program ILIKE '%Masters%'
             );
-        """, (0,))
+        """, 0)
 
         q8 = safe_get("""
             SELECT COUNT(*)
@@ -132,7 +138,7 @@ def create_app(test_config=None):
                 llm_generated_program ILIKE '%PhD%'
                 OR program ILIKE '%PhD%'
             );
-        """, (0,))
+        """, 0)
 
         q9 = fetch("""
             SELECT
@@ -166,19 +172,19 @@ def create_app(test_config=None):
         return render_template(
             "index.html",
 
-            q1=q1[0] if q1 and q1[0] is not None else 0,
-            q2=q2[0] if q2 and q2[0] is not None else 0,
+            q1=q1 if q1 is not None else 0,
+            q2=q2 if q2 is not None else 0,
 
             q3_gpa=q3[0] if q3 else None,
             q3_gre=q3[1] if q3 else None,
             q3_grev=q3[2] if q3 else None,
             q3_aw=q3[3] if q3 else None,
 
-            q4=q4[0] if q4 else None,
-            q5=q5[0] if q5 else 0,
-            q6=q6[0] if q6 else None,
-            q7=q7[0] if q7 else 0,
-            q8=q8[0] if q8 else 0,
+            q4=q4,
+            q5=q5 if q5 is not None else 0,
+            q6=q6,
+            q7=q7,
+            q8=q8,
 
             q9_programs=q9_programs,
             q9_universities=q9_universities,
@@ -186,35 +192,30 @@ def create_app(test_config=None):
             q10=q10,
             q11=q11
         )
-    
-    
+
     @app.route("/pull-data", methods=["POST"])
     def pull():
-        global scraping_running
-
-        if scraping_running:
+        if app.state["scraping_running"]:
             return jsonify({"busy": True}), 409
 
-        load_data.main()
+        load_data.main(app.config.get("DATABASE_URL"))
         return jsonify({"ok": True}), 200
-        
 
     @app.route("/update-analysis", methods=["POST"])
     def update():
-        global scraping_running
-
-        if scraping_running:
+        if app.state["scraping_running"]:
             return jsonify({"busy": True}), 409
 
-        scraping_running = True
+        app.state["scraping_running"] = True
         try:
-            query_data.main()
+            query_data.main(app.config.get("DATABASE_URL"))
         finally:
-            scraping_running = False
+            app.state["scraping_running"] = False
 
         return jsonify({"ok": True}), 200
 
     return app
+
 
 app = create_app()
 

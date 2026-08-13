@@ -1,0 +1,80 @@
+[
+  {
+    "title": "Module 1 \u2013 Personal Website",
+    "overview": "Built a personal Flask website with Home, Contact, and Projects pages using Jinja2 templates and a shared navigation layout.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module1",
+    "learned": "I learned how Flask's template inheritance and Blueprint routing work together to build a multi-page site cleanly."
+  },
+  {
+    "title": "Module 2 \u2013 GradCafe Web Scraper",
+    "overview": "Built a Selenium and BeautifulSoup scraper to collect graduate admissions results from TheGradCafe, then cleaned and standardized the data.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module2",
+    "learned": "I learned how to reverse-engineer a real website's structure and handle messy, inconsistent scraped data through a proper cleaning pipeline."
+  },
+  {
+    "title": "Module 3 \u2013 PostgreSQL & Flask Dashboard",
+    "overview": "Loaded scraped admissions data into PostgreSQL and built a Flask dashboard answering analytical questions with SQL queries.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module3",
+    "learned": "I learned how to write correct, precise SQL queries and how easy it is for subtle filtering bugs to quietly skew results."
+  },
+  {
+    "title": "Module 4 \u2013 Testing & Application Structure",
+    "overview": "Refactored the Flask app into a testable factory pattern and built a pytest suite covering routes, database inserts, and busy-state handling.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module4",
+    "learned": "I learned how to design code with real injectable seams so it can be tested meaningfully, not just superficially."
+  },
+  {
+    "title": "Module 5 \u2013 Security & CI/CD",
+    "overview": "Hardened the application with environment-based credentials, packaging via setup.py, and a GitHub Actions pipeline running pylint, tests, and security scans.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module5",
+    "learned": "I learned that a passing lint score can hide real issues if warnings are silently suppressed instead of fixed."
+  },
+  {
+    "title": "Module 6 \u2013 Microservices with Docker",
+    "overview": "Built a microservice architecture with Flask, PostgreSQL, and RabbitMQ, connected via publisher/consumer services running in Docker Compose.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module6",
+    "learned": "I learned how independent services communicate asynchronously through a message queue instead of direct calls."
+  },
+  {
+    "title": "Module 7 \u2013 Cloud Deployment on AWS",
+    "overview": "Deployed the microservice stack to an AWS EC2 instance using Docker Compose, with proper IAM permissions and environment-based secrets.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module7",
+    "learned": "I learned how much more there is to deploying software in the cloud versus running it locally, from permissions to networking to secrets management."
+  },
+  {
+    "title": "Module 8 \u2013 AWS SageMaker Data Analysis",
+    "overview": "Built a Jupyter notebook pipeline on SageMaker that loads data from S3, cleans and validates it, runs statistical tests, and generates a PDF analytics report.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module8",
+    "learned": "I learned how easily invalid data can silently corrupt downstream statistics if it isn't validated carefully before analysis."
+  },
+  {
+    "title": "Module 9 \u2013 KMeans Clustering",
+    "overview": "Applied KMeans clustering to admissions data to identify natural groupings by program and applicant profile.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module9",
+    "learned": "I learned how unsupervised clustering can reveal structure in data without predefined labels, and how sensitive it is to preprocessing choices."
+  },
+  {
+    "title": "Module 10 \u2013 Data Dashboard",
+    "overview": "Built an interactive Dash dashboard analyzing the Kaggle Diamonds dataset with Seaborn and Plotly visualizations.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module10",
+    "learned": "I learned how to build a full data pipeline from raw cleaning through interactive, browser-based visualization."
+  },
+  {
+    "title": "Module 11 \u2013 MLOps with MLflow",
+    "overview": "Added MLflow experiment tracking to a KMeans clustering pipeline, logging parameters, metrics, and artifacts across runs.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module11",
+    "learned": "I learned why tracking experiments systematically matters once you're iterating on models, not just running them once."
+  },
+  {
+    "title": "Module 12 \u2013 Neural Network from Scratch",
+    "overview": "Built a two-layer neural network using only NumPy to predict admissions outcomes, without relying on a deep learning framework.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module12",
+    "learned": "I learned how forward and backward propagation actually work under the hood, instead of treating them as a black box."
+  },
+  {
+    "title": "Module 13 \u2013 Fine-Tuning DistilBERT",
+    "overview": "Fine-tuned a pretrained DistilBERT model on admissions data and deployed it behind a Flask 'Will You Get In?' prediction page.",
+    "github_url": "https://github.com/ritwik2510/jhu_software_concepts/tree/main/Module13",
+    "learned": "I learned how to take a pretrained language model, adapt it to a specific task, and deploy it as a real, usable web feature."
+  }
+]

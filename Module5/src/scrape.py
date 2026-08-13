@@ -27,9 +27,9 @@ def build_url(page):
 
 
 def get_driver():
-    """gets the web driver"""
-    driver = webdriver.Chrome() # pylint: disable=not-callable
-    return driver
+    """Create and return a Selenium Chrome WebDriver."""
+    # Pylint incorrectly flags Selenium's dynamically exposed Chrome class.
+    return webdriver.Chrome()  # pylint: disable=not-callable
 
 
 def parse_entry(row):
@@ -62,7 +62,7 @@ def parse_detail(url):
             "comments": comments_tag.get_text(strip=True) if comments_tag else None,
             "raw_text": soup.get_text(" ", strip=True),
         }
-    except Exception:  # pylint: disable=broad-exception-caught
+    except (requests.RequestException, AttributeError):
         return {
             "comments": None,
             "raw_text": None,
@@ -105,7 +105,7 @@ def scrape_data(pages_to_run=None):
                         print(f"Checkpoint saved at {len(all_records)} records")
                         save_data(all_records)
 
-                except Exception as e:  # pylint: disable=broad-exception-caught
+                except (requests.RequestException, AttributeError, KeyError) as e:
                     print("Error scraping", e)
 
             time.sleep(0.1)
