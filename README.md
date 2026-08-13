@@ -65,4 +65,12 @@ Revision Made: Confirmed the local repository structure already matched the READ
 
 ## Final Reflection
 
-[most challenging module, strongest work, skills improved, how your understanding of Python changed]
+Final Reflection
+
+The most challenging module for me was Module 4 (Flask testing and application structure). It required rethinking the app's architecture to be genuinely testable — injectable database configuration, a proper app factory, seams for faking the scraper and loader — rather than just writing tests around whatever the code already did. Getting real coverage of busy-state behavior, database inserts, and integration flows meant fixing actual bugs in the application first (like a module-level flag causing test pollution) before the tests could even be written correctly.
+
+Module 10 (the data dashboard) best reflects my strongest work. It came together as a clean, complete pipeline — data cleaning, three well-chosen visualizations (a Seaborn scatter plot, a boxplot, and an animated Plotly scatter), and a single-page Dash app tying it all together — without the kind of structural rework other modules needed. It felt like the clearest example of doing something well the first time, rather than fixing it well the second time.
+
+The skills I feel most improved on this semester are SQL query correctness and data validation — I made the same category of mistake (overly broad LIKE patterns, not validating numeric ranges, silently corrupting downstream statistics) in multiple modules before it really clicked how much upstream data quality problems compound. I also became much more comfortable with testing patterns: dependency injection, fixtures, and the difference between a test that merely passes and a test that actually proves something.
+
+My understanding of Python changed from thinking of it as a scripting tool for getting a task done, to understanding it as a language for building maintainable systems — where structure (packaging, testable seams, environment-based configuration) matters as much as whether the code runs correctly once.

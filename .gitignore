@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 .venv/
+.venv*/
 venv/
 env/
 *.egg-info/
@@ -10,6 +11,5 @@ htmlcov/
 .env
 *.log
 .DS_Store
-.venv312
-.venv312/
 mlartifacts/
+results/checkpoint-*/
